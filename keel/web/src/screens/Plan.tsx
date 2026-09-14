@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { doneUnitIds, skippedUnitIds, type Projection, type Unit } from "@keel/engine";
 import type { Ctx } from "../app.tsx";
 import { fmtDate } from "./Today.tsx";
@@ -18,6 +18,8 @@ export function PlanScreen(p: { ctx: Ctx; projection: Projection }) {
   const [skipping, setSkipping] = useState<Unit | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  // 252 rows is a long list: land on the current unit (no smooth scroll — reduced-motion users get the same jump).
+  useEffect(() => { document.querySelector(".plan-row.current")?.scrollIntoView({ block: "center" }); }, []);
 
   const statusOf = (u: Unit): Status => {
     if (u.id === currentId) return "current";
@@ -59,7 +61,9 @@ export function PlanScreen(p: { ctx: Ctx; projection: Projection }) {
                   return (
                     <li key={u.id} class={`plan-row ${st}`} data-seq={u.seq} data-status={st}>
                       <span class="seq" aria-hidden="true">{u.seq}</span>
-                      <div>
+                      <div class="plan-open" role="button" tabIndex={0} aria-label={`${t.details}: ${u.is_buffer ? t.restDay : u.title}`}
+                        onClick={() => ctx.go({ name: "detail", unit: u, from: { name: "plan" } })}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ctx.go({ name: "detail", unit: u, from: { name: "plan" } }); } }}>
                         <span class="plan-title">{u.is_buffer ? t.restDay : u.title}</span>
                         <span class="plan-meta">
                           {typeLabel[u.type]} · {u.est_minutes} {t.min}

@@ -1,4 +1,4 @@
-import { doneUnitIds, skippedUnitIds, weekStart, type ConsistencyScore, type Projection, type Unit } from "@keel/engine";
+import { doneUnitIds, skippedUnitIds, weekStart, compareDates, type ConsistencyScore, type Projection, type Unit } from "@keel/engine";
 import type { Ctx } from "../app.tsx";
 import { CourseLine } from "./Today.tsx";
 
@@ -10,6 +10,10 @@ export function Progress(p: { ctx: Ctx; projection: Projection; score: Consisten
   const done = doneUnitIds(ctx.enrollment);
   const skipped = skippedUnitIds(ctx.enrollment);
   const reviewed = ctx.reviews.some((r) => r.week_start === weekStart(ctx.today));
+  const ws = weekStart(ctx.today);
+  const thisWeek = ctx.completions.filter((c) => compareDates(c.date, ws) >= 0 && compareDates(c.date, ctx.today) <= 0 && (c.outcome === "done" || c.outcome === "swapped_review"));
+  const weekSessions = new Set(thisWeek.map((c) => c.date)).size;
+  const weekMinutes = thisWeek.reduce((n, c) => n + (c.minutes ?? 0), 0);
   const currentId = projection.items[0]?.unit.id;
   const inProjection = new Set(projection.items.map((i) => i.unit.id));
   const cellOf = (u: Unit): Cell => {
@@ -33,6 +37,7 @@ export function Progress(p: { ctx: Ctx; projection: Projection; score: Consisten
       <h2>{ctx.enrollment.plan.title}</h2>
       <CourseLine ctx={ctx} projection={projection} />
       <p class="score"><strong>{score.percent}%</strong> <span class="muted">{t.ofLast28}</span></p>
+      <p class="muted week-stats" data-week-sessions={weekSessions}>{t.thisWeek}: {weekSessions} {t.sessions} · {weekMinutes} {t.min}</p>
       {reviewed
         ? <p class="muted" data-reviewed>{t.reviewedThisWeek}</p>
         : <button class="secondary" data-action="review" onClick={() => ctx.go({ name: "review" })}>{t.weeklyReview}</button>}
@@ -43,7 +48,7 @@ export function Progress(p: { ctx: Ctx; projection: Projection; score: Consisten
             <div class="week" key={week}>
               <span class="week-label">{t.week} {week}</span>
               <div class="cells">
-                {units.map((u) => <span key={u.id} class={`cell ${cellOf(u)}`} title={u.title} aria-label={`${u.title}: ${cellOf(u)}`} />)}
+                {units.map((u) => <button key={u.id} class={`cell ${cellOf(u)}`} title={u.title} aria-label={`${u.title}: ${cellOf(u)}`} onClick={() => ctx.go({ name: "detail", unit: u, from: { name: "progress" } })} />)}
               </div>
             </div>
           ))}

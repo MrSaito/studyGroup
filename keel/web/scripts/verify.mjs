@@ -27,4 +27,4 @@ if (entryBytes > ENTRY_LIMIT) fail(`entry JS ${entryBytes} B exceeds ${ENTRY_LIM
 const lazy = js.filter((f) => !entryNames.has(f));
 for (const f of lazy) if (size(f) > LAZY_LIMIT) fail(`lazy chunk ${f} is ${size(f)} B, over the ${LAZY_LIMIT} B template ceiling`);
 if (!lazy.some((f) => f.startsWith("ai-engineer-36w"))) fail("roadmap template chunk missing from dist/assets (should be a lazy chunk, not inlined)");
-console.log(`dist OK: ${precache.length} precached, entry JS ${(entryBytes / 1024).toFixed(1)} KB (limit ${ENTRY_LIMIT / 1024} KB), lazy ${lazy.map((f) => `${f.replace(/-[\w]+\.js$/, "")} ${(size(f) / 1024).toFixed(1)} KB`).join(", ")} (limit ${LAZY_LIMIT / 1024} KB each), ${/SW_VERSION = "([^"]+)"/.exec(sw)[1]}`);
+console.log(`dist OK: ${precache.length} precached, entry JS ${(entryBytes / 1024).toFixed(1)} KB (limit ${ENTRY_LIMIT / 1024} KB), lazy ${lazy.map((f) => `${f.replace(/-[\w-]{8}\.js$/, "")} ${(size(f) / 1024).toFixed(1)} KB`).join(", ")} (limit ${LAZY_LIMIT / 1024} KB each), ${/SW_VERSION = "([^"]+)"/.exec(sw)[1]}`);

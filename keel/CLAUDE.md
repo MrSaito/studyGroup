@@ -25,13 +25,13 @@ re-plan offer (7 days), or a restart/archive prompt (21 days). Never shows
 "overdue", never shows a count of missed days, never uses red. Everything
 else in the blueprint is secondary to that loop.
 
-## 2. Current state (2026-09-14, session 5)
+## 2. Current state (2026-09-14, session 6)
 
 | Layer | State | Proof |
 |---|---|---|
-| `engine/` `@keel/engine` 0.1.0 | **Done.** Pure TS, zero runtime deps, 31 tests; `skipped` outcome; weekly review/quiz | `cd engine && ./verify.sh` |
-| `web/` `@keel/web` 0.2.0 | **Phase A complete.** Preact+Vite PWA, IndexedDB v2, en+ur, offline; roadmap template, plan screen + skip, weekly review, file import, reload-safe timer | `cd web && ./verify.sh` |
-| Production | **Live 0.2.0**, public: https://keel-hshahfahad58-2498s-projects.vercel.app/ — Vercel builds from a pinned commit (HANDOVER s5) | curl 200 + sha256 match; smoke vs prod from Termux only |
+| `engine/` `@keel/engine` 0.1.0 | **Done.** Pure TS, zero runtime deps, 32 tests; `skipped` outcome; weekly review/quiz; Return copy in 6 locales | `cd engine && ./verify.sh` |
+| `web/` `@keel/web` 0.2.1 | **Phase A complete + session 6.** Preact+Vite PWA, IndexedDB v2, offline; en + ur/ar/zh/ru/es (drafts, lazy chunks); roadmap template, plan + skip, unit details, multi-unit days, weekly review, file import, backup restore, editable availability, reload-safe timer | `cd web && ./verify.sh` |
+| Production | **Live 0.2.1**, public: https://keel-hshahfahad58-2498s-projects.vercel.app/ — Vercel builds from a pinned commit (HANDOVER s5) | curl 200 + sha256 match; smoke vs prod from Termux only |
 | Backend / sync / auth / push | **Nothing.** | — |
 | Payments, pods, coach, quizzes, calendar | **Nothing.** | — |
 | Real 36-week AI Engineer roadmap | **Imported (A8, session 4).** `plans/ai-engineer-36w.json`, 252 units, bundled in onboarding | `engine/verify.sh` roadmap step |
@@ -103,7 +103,11 @@ a one-paragraph justification in HANDOVER.md.
 no clock; the client passes `today`. Arithmetic is UTC-internal so DST
 can't shift a day. `web/src/clock.ts` is the only `new Date()` for "today".
 
-**Completion outcomes** (append-only, never edited or deleted):
+**Completion outcomes** (append-only, never edited or deleted). Since
+session 6 a day may hold more than one `done` row: the Today card still
+reads "Done for today", but offers "Do another unit today" for the next
+non-buffer unit; each `done` advances and the finish date moves in.
+Consistency counts *days with a session*, never units.
 - `done` — unit advances; counts as a session.
 - `swapped_review` — the learner did a 10-min review instead; counts as a
   session; unit does **not** advance. Return units record this against the
@@ -334,8 +338,10 @@ counsel has been consulted.
   bundle small — decide in B4 and record.
 - **Never echo secrets.** STACK.md incident log: a key was once leaked in
   a debug paste. Redact before printing env, headers, or webhook bodies.
-- **i18n:** every user-visible string goes in `i18n.ts` in both `en` and
-  `ur` (ur may be a draft, marked `// draft` until A6 clears it).
+- **i18n:** every user-visible string goes in `i18n.ts` (`en`) and in every
+  file under `web/src/locales/` (ur, ar, zh, ru, es — machine drafts marked
+  `// draft` until a native reader clears them). `scripts/check-i18n.ts`
+  fails the gate on a missing key. Locales are lazy chunks; keep `en` inline.
 - **Accessibility floor:** visible focus, labelled controls, no
   colour-only state (cells have `aria-label`), reduced-motion respected.
 - **When the blueprint and reality conflict, reality wins and you say so
@@ -368,7 +374,7 @@ Exact next command: …
 ## 10. Open questions for Saito (ask only when you reach the task)
 
 1. ~~A8 — where is the 36-week AI Engineer roadmap file?~~ Received and imported (session 4).
-2. A6 — Urdu string review.
+2. A6 — string review: Urdu (Saito) plus Arabic, Chinese, Russian, Spanish (find a reader each).
 3. B1 — Supabase org to create the project in.
 4. B5 — confirm he received the first push on the Pixel.
 5. C2 — Instamojo account details; international MoR choice (Paddle vs

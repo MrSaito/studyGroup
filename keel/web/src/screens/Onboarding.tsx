@@ -1,13 +1,8 @@
 import { useState } from "preact/hooks";
 import { importMarkdown, assertPlan, validatePlan, type Plan, type Weekday } from "@keel/engine";
 import type { EnrollmentRecord } from "../store.ts";
-import type { Locale, Strings } from "../i18n.ts";
+import { DAY_LABELS, LOCALES, isLocale, type Locale, type Strings } from "../i18n.ts";
 import { TEMPLATES, type Template } from "../templates.ts";
-
-const DAY_LABELS: Record<Locale, string[]> = {
-  en: ["S", "M", "T", "W", "T", "F", "S"],
-  ur: ["اتوار", "پیر", "منگل", "بدھ", "جمعرات", "جمعہ", "ہفتہ"],
-};
 
 function parsePlan(text: string): Plan {
   const s = text.trim();
@@ -54,7 +49,11 @@ export function Onboarding(p: { t: Strings; locale: Locale; setLocale: (l: Local
       <header class="brand">
         <h1>{t.appName}</h1>
         <p>{t.tagline}</p>
-        <button class="link" onClick={() => p.setLocale(p.locale === "en" ? "ur" : "en")}>{p.locale === "en" ? "اردو" : "English"}</button>
+        <label class="lang">{t.language}
+          <select value={p.locale} onChange={(e) => { const v = (e.target as HTMLSelectElement).value; if (isLocale(v)) p.setLocale(v as Locale); }}>
+            {LOCALES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
+          </select>
+        </label>
       </header>
       {p.error && <p class="notice" role="alert">{p.error}</p>}
 

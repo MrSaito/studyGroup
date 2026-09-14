@@ -1,10 +1,11 @@
 import { useState } from "preact/hooks";
 import { buildReturnUnit, halveNextTwoWeeks, daySpent, isReviewDay, weekStart, type LapseState, type Projection } from "@keel/engine";
 import type { Ctx } from "../app.tsx";
+import { DATE_LOCALE, type Locale } from "../i18n.ts";
 
-export function fmtDate(iso: string, locale: string): string {
+export function fmtDate(iso: string, locale: Locale): string {
   const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
-  return new Date(y, m - 1, d).toLocaleDateString(locale === "ur" ? "ur-PK" : "en-GB", { day: "numeric", month: "short" });
+  return new Date(y, m - 1, d).toLocaleDateString(DATE_LOCALE[locale] ?? "en-GB", { day: "numeric", month: "short" });
 }
 
 export function CourseLine(p: { ctx: Ctx; projection: Projection }) {
@@ -95,8 +96,12 @@ export function Today(p: { ctx: Ctx; projection: Projection; lapseState: LapseSt
       <section class="today">
         <ReviewPrompt ctx={ctx} />
         <p class="eyebrow">{daySpent(ctx.enrollment, ctx.today) ? t.doneForToday : t.noSessionToday}</p>
-        <h2 class="unit-title">{next.unit.title}</h2>
+        <h2 class="unit-title">{next.unit.is_buffer ? t.restDay : next.unit.title}</h2>
         <p class="muted">{t.nextUp}: {fmtDate(next.date, ctx.locale)} · {next.unit.est_minutes} {t.min}</p>
+        {!next.unit.is_buffer && daySpent(ctx.enrollment, ctx.today) && (
+          // Multi-unit days (session 6): the sequence is elastic in both directions — an extra unit today pulls the finish date in.
+          <button class="secondary" data-action="do-another" onClick={() => ctx.go({ name: "unit", unit: next.unit, mode: "plan" })}>{t.doAnother}</button>
+        )}
         <CourseLine ctx={ctx} projection={projection} />
       </section>
     );

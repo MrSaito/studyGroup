@@ -1,3 +1,52 @@
+# HANDOVER.md — Keel, session 6 (2026-09-14) — languages ×4, multi-unit days, details, convenience — 0.2.1
+
+## Session 6 — 2026-09-14 — Saito's ask: zh/ar/ru/es, several units a day, see past & upcoming units, "features that sell"
+Built:
+- **Languages.** `web/src/i18n.ts` keeps English inline and loads every other locale as a lazy chunk (`web/src/locales/{ur,ar,zh,ru,es}.ts`, 4–6 KB each). Arabic and Urdu are RTL. `DAY_LABELS`, `DATE_LOCALE`, `LOCALES` live in i18n; the onboarding toggle and Settings are a 6-way `<select>`; non-English shows "This translation is a draft" under the picker. Engine `recovery.ts` (Return unit copy) gained ar/zh/ru/es tables. **All five non-English tables are machine drafts** (each file header says so) — native review before any is promoted beyond "available". New gate `scripts/check-i18n.ts`: every locale covers every English key, no extras, no empties; English checked against the copy rules.
+- **Multi-unit days.** Today's "Done for today" card offers "Do another unit today" (not for rest/buffer units). Each `done` row advances; the projection already lays remaining units from tomorrow, so the finish date moves in by a day. Consistency still counts *days with a session* (two units today = one session-day). Engine test pins it.
+- **Unit details.** `web/src/screens/UnitDetail.tsx` — any unit from a Plan row (tap the title) or a Progress cell (cells are now buttons): learn/do/tip/deliverable; past → "Done on <date> · N min logged" and the log text (plus any 10-min review notes); skipped → the reason; upcoming → "Planned for <date>"; current → Start.
+- **Settings became useful.** Edit working days, minutes/day and the cue (after/at) with Save; **Restore from a backup file** (the Export JSON; validated with `assertPlan` + row-shape checks, confirm dialog, replaces everything); **Start a new plan** (fills the gap the "Plan complete" copy promised); language picker.
+- **Progress:** "This week: N sessions · M min". **Plan:** opens scrolled to the current unit (252 rows).
+- `web/src/store.ts` — `restore()`; `Settings.locale` widened. `web/verify.sh` — second error-swallowing bug fixed (a failing `a && b` inside `if` does not trip `set -e`; each e2e now on its own line).
+- Bug found by the new smoke path and fixed: the draft-log debounce could write the timer back **after** Done cleared it, so a reload reopened a finished unit. Pending write is cancelled on Done/unmount, and a stale timer for an already-advanced unit is discarded on load.
+- `web/src/version.ts` — **APP_VERSION 0.2.1**. Engine: 32 tests.
+
+Verified:
+```
+$ cd engine && ./verify.sh                      # pass 32 / fail 0 · ALL GATES PASSED
+$ cd web && ./verify.sh
+== i18n            ur ar zh ru es: 111/111 strings each
+== dist assertions dist OK: 13 precached, entry JS 62.7 KB (limit 80 KB), lazy ai-engineer-36w 109.6 KB, ar 5.2, es 4.1, ru 6.1, ur 5.3, zh 3.8 KB (limit 120 KB each)
+== browser smoke   Today · Persisted · Do another: Day 3 of 10 … Finish by 24 Sept | was: 25 Sept
+                   Detail (past): Done on 14 Sept · 1 min logged · Plan: skipped unit 4 · Progress 10/2 done/1 skipped · This week: 1 sessions
+                   Detail (upcoming): Planned for 17 Sept · Weekly review saved · Languages: ur ar zh ru es OK (rtl: ur ar)
+                   Availability edited: Saturday on, persisted · Offline reload OK · Roadmap offline: Day 1 of 252
+                   Backup restored: Lists and dictionaries | done cells: 1 · File import: 10 units · SMOKE PASSED
+                   Hidden 5 min → 34:50 · After reload → 34:47 | log restored · TIMER E2E PASSED
+ALL GATES PASSED
+```
+
+Deployed: **0.2.1 — built by Vercel from this commit; sha256 verification recorded in the follow-up commit.**
+
+Decisions made (with reason):
+- **§4 changed — multi-unit days.** Was: one unit per day, full stop. Now: a completion row dated today still makes `projection.today === null` (the card says "Done for today"), but the learner may open the next non-buffer unit and each `done` advances. Justification: Saito asked for it; the elastic schedule was already symmetric in the engine (deficit floors at 0, remaining units lay out from tomorrow), so the change is UI + one test, and the blueprint's anti-cramming intent is kept by (a) never offering a rest/buffer unit early, (b) consistency counting session-days not units, so binge days do not inflate the score.
+- **Lazy locale chunks, English inline.** Six inline tables would have put the entry over 80 KB; a language is loaded once and cached. First paint is always English until settings load (milliseconds, from IndexedDB).
+- **Drafts shipped as "available", flagged in-app.** A visible "this translation is a draft" line is more honest than hiding four languages until reviewers appear; the check-i18n gate guarantees no English falls through as a blank.
+- **Restore validates before it wipes.** `parseBackup` runs `assertPlan` and row-shape checks first; a bad file leaves the device untouched.
+- **Not built, deliberately:** dark mode (changes the design tokens in §4 — Saito's call), editing past logs (completions are append-only by design), calendar `.ics` (C5, premium), push (Phase B).
+
+Deferred / partial:
+- Native review of ur/ar/zh/ru/es (A6 now covers five languages). Urdu remains the only one Saito can check himself.
+- Editing availability re-scores history under the new days (consistency/lapse read current availability). Documented, accepted: the score is a 28-day window and recovers on its own.
+- Progress cells as buttons are 22 px targets; fine for a fingertip, tight for tremor — revisit with the A7 Today fixes if Saito notices.
+
+Exact next command:
+```
+cd keel/web && ./verify.sh      # nothing queued: Phase B waits on "Today works"; A6 waits on reviewers.
+```
+
+---
+
 # HANDOVER.md — Keel, session 5 (2026-09-14) — Phase A complete: A2 A3 A4 A5, 0.2.0
 
 ## Session 5 — 2026-09-14 — A2 timer · A3 weekly review · A4 plan screen + `skipped` · A5 file import · Phase A exit

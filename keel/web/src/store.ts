@@ -15,7 +15,7 @@ export interface CompletionRow extends Completion {
   id: string;           // client-generated, for idempotent sync later
   created_at: string;   // ISO timestamp
 }
-export interface Settings { locale: "en" | "ur" }
+export interface Settings { locale: string }
 /** Weekly review answers (Blueprint §3.6). Keyed by the Monday of the week. */
 export interface ReviewRow {
   id: string;
@@ -85,6 +85,13 @@ export const store = {
   getTimer: () => tx<TimerState | undefined>("kv", "readonly", (s) => s.get("timer")),
   putTimer: (t: TimerState) => tx("kv", "readwrite", (s) => s.put(t, "timer")),
   clearTimer: () => tx("kv", "readwrite", (s) => s.delete("timer")),
+  /** Replace everything on this device with a backup (export file). */
+  restore: async (d: { enrollment: EnrollmentRecord; completions: CompletionRow[]; reviews: ReviewRow[] }) => {
+    await store.reset();
+    await store.putEnrollment(d.enrollment);
+    for (const c of d.completions) await tx("completions", "readwrite", (s) => s.put(c));
+    for (const r of d.reviews) await tx("reviews", "readwrite", (s) => s.put(r));
+  },
   /** Full wipe. Used by "Delete plan and history" and archive. */
   reset: async () => {
     await tx("kv", "readwrite", (s) => s.delete("enrollment"));

@@ -383,3 +383,25 @@ test("retrievalQuiz: only done units with a log ≥7 days old, one per unit, no 
   assert.notDeepEqual(retrievalQuiz(e, today, 3, seedFrom("other")), q, "different seed → different draw");
   assert.equal(retrievalQuiz(enroll(plan, ALL_DAYS, comps), addDays(MON, 2)).length, 0, "nothing old enough yet");
 });
+
+// ---------- multi-unit days (session 6) ----------
+test("multi-unit day: a second done row dated today advances again, finish moves a day earlier, still one session-day", () => {
+  const plan = importMarkdown(md);
+  const [u1, u2, u3] = [plan.units[0]!, plan.units[1]!, plan.units[2]!];
+  const e = enroll(plan, ALL_DAYS, [
+    { unit_id: u1.id, date: MON, outcome: "done", minutes: 40 },
+    { unit_id: u2.id, date: MON, outcome: "done", minutes: 45 },
+  ]);
+  const p = project(e, MON);
+  assert.equal(p.today, null, "the day is spent");
+  assert.equal(p.items[0]!.unit.id, u3.id, "next unit is the third");
+  assert.equal(p.items[0]!.date, addDays(MON, 1));
+  assert.equal(p.projected_finish, addDays(MON, 8), "baseline finish is day 10 (MON+9); one extra unit today → MON+8");
+  assert.equal(p.position, "Day 3 of 10 — Stage 1, Week 1");
+  const c = consistency(e, MON);
+  assert.equal(c.completed, 1, "consistency counts days with a session, not units");
+  assert.equal(c.percent, 100);
+  assert.equal(lapse(e, addDays(MON, 1)).consecutive_missed_days, 0);
+  // Return unit locales: every table has the same keys (drafts included).
+  for (const l of ["en", "ur", "ar", "zh", "ru", "es"]) assert.ok(buildReturnUnit(e, l).title.length > 0, l);
+});

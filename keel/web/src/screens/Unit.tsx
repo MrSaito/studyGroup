@@ -5,7 +5,7 @@ import type { Ctx } from "../app.tsx";
 
 function isUrl(s: string): boolean { return /^https?:\/\/\S+$/.test(s.trim()); }
 
-function Field(p: { label: string; text?: string }) {
+export function Field(p: { label: string; text?: string }) {
   if (!p.text) return null;
   return (
     <div class="field">
@@ -76,8 +76,12 @@ export function UnitScreen(p: { ctx: Ctx; unit: Unit; mode: "plan" | "review"; p
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0"), ss = String(remaining % 60).padStart(2, "0");
   const pct = Math.min(100, Math.round((elapsed / total) * 100));
 
+  // Unmount must not leave a debounced log write pending: it could land after Done cleared the timer.
+  useEffect(() => () => { if (logFlush.current != null) clearTimeout(logFlush.current); }, []);
+
   const done = async () => {
     setSaving(true);
+    if (logFlush.current != null) { clearTimeout(logFlush.current); logFlush.current = null; }
     const minutes = Math.max(1, Math.round(elapsed / 60));
     // Review mode = a swapped_review against the *current* plan unit (the return unit borrows its seq).
     const target = mode === "review" ? p.projection.items[0]?.unit ?? unit : unit;

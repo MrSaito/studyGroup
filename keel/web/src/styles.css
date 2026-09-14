@@ -7,7 +7,7 @@
   --tide: #5C7C84;
   --line: #E4E0D6;
   --radius: 6px;
-  --font: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Nastaliq Urdu", system-ui, sans-serif;
+  --font: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Nastaliq Urdu", "Noto Sans Arabic", "Noto Sans SC", "PingFang SC", system-ui, sans-serif;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -82,7 +82,7 @@ label { display: block; color: var(--tide); font-size: 15px; }
 .week { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 8px; margin: 6px 0; }
 .week-label { color: var(--tide); font-size: 13px; }
 .cells { display: flex; flex-wrap: wrap; gap: 6px; }
-.cell { width: 22px; height: 22px; border-radius: 4px; background: #fff; border: 1.5px solid var(--line); }
+.cells .cell { width: 22px; height: 22px; padding: 0; margin: 0; border-radius: 4px; background: #fff; border: 1.5px solid var(--line); }
 .cell.done { background: var(--keel); border-color: var(--keel); }
 .cell.current { border-color: var(--keel); border-width: 2.5px; }
 .cell.buffer { background: var(--shoal); border-color: var(--shoal); opacity: .55; }
@@ -120,3 +120,16 @@ label { display: block; color: var(--tide); font-size: 15px; }
 /* File import (A5) */
 .file { margin: -6px 0 12px; }
 input[type=file] { background: transparent; border: 0; padding: 6px 0; font-size: 15px; }
+
+/* Session 6: details, settings editor, language picker */
+.plan-open { cursor: pointer; }
+.plan-open:focus-visible { outline: 3px solid var(--keel); outline-offset: 2px; border-radius: 4px; }
+.detail .status { color: var(--tide); margin: 0 0 16px; }
+.settings h3 { margin-top: 26px; color: var(--ink); }
+.settings .days { margin-bottom: 10px; }
+.settings .notice { margin-top: 4px; }
+.draft-note { font-size: 14px; margin: -8px 0 12px; }
+.brand .lang { margin-top: 6px; }
+.brand .lang select { width: auto; margin: 0 0 0 8px; padding: 6px 10px; display: inline-block; }
+[dir=rtl] .brand .lang select { margin: 0 8px 0 0; }
+.week-stats { margin: -4px 0 12px; font-size: 15px; }
