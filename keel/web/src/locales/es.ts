@@ -142,5 +142,6 @@ const t: Partial<Strings> = {
   pushUnsupported: "Los recordatorios necesitan Keel instalado en la pantalla de inicio (Añadir a pantalla de inicio y volver a abrir).", // draft
   deleteAccount: "Eliminar mi cuenta", // draft
   deleteAccountConfirm: "Esto elimina tu cuenta y todo lo sincronizado con ella. La copia local también se elimina. ¿Continuar?", // draft
+  linkOrCode: "Revisa tu correo. Toca el enlace, o escribe aquí el código si lo hay.", // draft
 };
 export default t;

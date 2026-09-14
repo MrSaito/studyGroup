@@ -1,3 +1,52 @@
+# HANDOVER.md — Keel, session 8 (2026-09-14) — Phase B LIVE: Supabase project, schema, functions, sync — 0.3.0
+
+## Session 8 — 2026-09-14 — B1 unblocked (invoices settled), B1–B7 live on the real project
+**Project:** `keel`, ref **`qwrbevhxtflmwkmueqmw`**, org "Abdul's Den" (Pro; **$10/month** for this project), region **ap-south-1 (Mumbai)**, URL `https://qwrbevhxtflmwkmueqmw.supabase.co`. Publishable key `sb_publishable_L4QC…` is in `web/src/config.ts` (public by design). No secret is in the repo: the VAPID private key, VAPID public key and the cron shared secret live only in **Supabase Vault**; the local file they were generated into was deleted.
+
+Done on the live project, in order, each verified:
+1. `apply_migration 0001_core` → `verify.sql` via execute_sql: **all 8 tables ok** (RLS on, exact policy counts, append-only).
+2. `apply_migration 0003_metrics` (4 views, revoked from API roles).
+3. Vault: 3 secrets created via plain SQL (not via a migration — migration bodies are stored in the DB). `apply_migration 0002_secrets_cron`: pg_cron + pg_net enabled, `public.get_secret()` (service role only), cron job **`keel-nudge` every 15 min** → pg_net → the function with the shared-secret header.
+4. Edge Functions deployed: **`nudge`** (verify_jwt=false, guarded by the Vault secret; 7 files incl. the engine copies) and **`delete-account`** (verify_jwt=true).
+5. `web/src/config.ts` filled; `public/vercel.json` CSP `connect-src` += the project origin; **`captureSessionFromHash()`** added so the magic link in Supabase's default email works (the code path also works once `{{ .Token }}` is in the template); OTP requests carry `redirect_to` = the app.
+6. **Live check (`web/scripts/live-check.mjs`, Node through the proxy, two SQL-created test users): 17/17** — sign-in, insert, own read, UPDATE/DELETE on completions → 403, insert owned by another user → 403, cross-user reads → 0 rows, cross-user UPDATE → 0 rows, users row isolation, events write-only, delete-account → 200 and the token dies, nudge dry run 200, wrong secret → 403. Test users deleted afterwards.
+7. **Nudge dry run with a seeded learner** (3-unit plan, reminder at the current Karachi minute): `{"considered":1,"results":[{"kind":"first","title":"After dinner, at your desk","body":"Day 1 of 3 — Dictionaries (45 min)","delivered":0,"dryRun":true}]}` — the engine copy inside the function projects the plan, sees the day unspent, applies the intention copy. Delivered 0 because the test user has no push subscription (that is the Pixel step).
+8. Full web gate with the real config: ALL GATES PASSED (schema on pglite, scheduler tests, smoke, timer e2e, sync e2e). Entry JS 69.2 KB. `verify.mjs` secret scan narrowed to real secret shapes (the public URL/key are allowed; JWTs, `sb_secret_`, service_role, private keys are not).
+9. **APP_VERSION 0.3.0** (Phase B exit marker).
+
+Deployed: **0.3.0 — built by Vercel from this commit; sha256 verification recorded in the follow-up commit.**
+
+**Saito — three things only you can do (dashboard, ~5 minutes):**
+- Auth → URL Configuration → **Site URL** = `https://keel-hshahfahad58-2498s-projects.vercel.app` and add it to **Redirect URLs**. Until then the magic link in the sign-in email lands on `localhost:3000` and sign-in fails. (The Management API for this needs a personal access token the MCP does not have.)
+- Optional but better: Auth → Email Templates → Magic Link: add a line with `{{ .Token }}` so the email also carries the 6-digit code (the app accepts either).
+- Then on the Pixel: Settings → Back up and sync → sign in; Settings → Reminders → set the time to a few minutes ahead → Turn reminders on; wait for the push. **Log the receipt here (B5 gate).** If nothing arrives within 20 min, run `select * from cron.job_run_details order by start_time desc limit 5` and `select * from public.nudges` via execute_sql and send me the output.
+- Phone OTP: needs an SMS provider (Twilio/MessageBird) configured under Auth → Providers → Phone. Not done; the client has the calls ready.
+
+SECURITY-BASELINE (CLAUDE.md §8; the standalone file was never in the tarball, so this is the checklist as CLAUDE.md states it):
+- RLS on every table, `user_id = auth.uid()`: **yes**, verified live and on pglite. Completions/events have no UPDATE/DELETE policy **and** grants revoked: yes (403 live).
+- Negative cross-user read test: **yes**, live (0 rows) and pglite.
+- Offline queue re-checks the session before replaying; expired token → keep queue, prompt re-auth: yes (`freshSession` → `AuthExpired` → status "reauth", queue untouched; e2e covers offline→online drain).
+- No secrets in the bundle or repo: yes (scan in `verify.mjs`; Vault for server secrets; secrets file deleted).
+- CSP: `default-src 'self'; connect-src 'self' <project origin>`; no third-party SDK: yes.
+- Service worker caches same-origin GET only; API calls never cached: yes.
+- Adversarial pass — how would I break in or lose data? (a) Steal the publishable key → you get exactly what an anonymous browser gets: nothing without a JWT; RLS scopes every row. (b) Steal a user's JWT → their rows, for ≤1 h; refresh tokens rotate; sign-out revokes. (c) Forge a completion for another user → 403 (tested). (d) Replay a push subscription → server sends to that endpoint only; endpoints are unique and user-scoped; 404/410 pruned. (e) Call `nudge` directly → 403 without the Vault secret (tested); pg_cron is the only caller. (f) Call `get_secret` from the API → revoked from anon/authenticated. (g) Delete-account via a stolen JWT → yes, that is the one destructive action a live token allows; acceptable (confirm dialog; it is the user's own data). (h) Lose data: completions are append-only on both ends, IndexedDB is the source of truth, sync is union-by-id, restore-from-backup exists. (i) Enrollment LWW can drop an edit made on a device that was offline longer than another device's newer edit — accepted, documented in §5.3 ("no conflict UI ever"). Open: device-side IndexedDB unencrypted (accepted since session 2); no rate limiting beyond Supabase defaults; `events` has no size cap per user (add a cron trim in Phase C).
+
+Decisions made (with reason):
+- **Secrets via execute_sql, not apply_migration** — migration SQL is persisted in `supabase_migrations.schema_migrations`; a secret there would be a secret in the DB history.
+- **Dry-run mode ignores the time window** so the engine path can be exercised at any minute; the real path still enforces the 15-minute window (scheduler tests).
+- **Magic-link capture** rather than waiting on a template edit: works with the default email today; the code path stays for when the template carries the token.
+- **Vault secret read through a security-definer function** because PostgREST does not expose the vault schema.
+- **Test users by SQL insert into auth.users** (documented Supabase pattern) so the live check needs no mailbox; both deleted afterwards.
+
+Exact next command:
+```
+# After Saito sets Site URL and logs the push receipt: Phase B exit is complete. Then: cohort invite copy + install one-pager (CLAUDE.md Phase B exit),
+# and the MVP criterion clock starts at cohort start. Phase C stays blocked until the criterion is measured.
+cd keel/web && ./verify.sh
+```
+
+---
+
 # HANDOVER.md — Keel, session 7 (2026-09-14) — Phase B built and gated locally; B1 blocked on billing
 
 ## Session 7 — 2026-09-14 — "Go B": B1 blocked, B2–B7 built, every gate that can run without a live project is green

@@ -25,14 +25,14 @@ re-plan offer (7 days), or a restart/archive prompt (21 days). Never shows
 "overdue", never shows a count of missed days, never uses red. Everything
 else in the blueprint is secondary to that loop.
 
-## 2. Current state (2026-09-14, session 7)
+## 2. Current state (2026-09-14, session 8)
 
 | Layer | State | Proof |
 |---|---|---|
 | `engine/` `@keel/engine` 0.1.0 | **Done.** Pure TS, zero runtime deps, 32 tests; `skipped` outcome; weekly review/quiz; Return copy in 6 locales | `cd engine && ./verify.sh` |
 | `web/` `@keel/web` 0.2.1 | **Phase A complete + session 6.** Preact+Vite PWA, IndexedDB v2, offline; en + ur/ar/zh/ru/es (drafts, lazy chunks); roadmap template, plan + skip, unit details, multi-unit days, weekly review, file import, backup restore, editable availability, reload-safe timer | `cd web && ./verify.sh` |
-| Production | **Live 0.2.2**, public: https://keel-hshahfahad58-2498s-projects.vercel.app/ — Vercel builds from a pinned commit (HANDOVER s5) | curl 200 + sha256 match; smoke vs prod from Termux only |
-| Backend / sync / auth / push | **Built, gated locally, not live.** `supabase/` (migration, RLS test on pglite, metrics, 2 Edge Functions), `web/src/{auth,sync,push,events}.ts`; B1 blocked on org billing (HANDOVER s7) | `cd web && ./verify.sh` (schema test + sync e2e) |
+| Production | **Live 0.3.0**, public: https://keel-hshahfahad58-2498s-projects.vercel.app/ — Vercel builds from a pinned commit (HANDOVER s5) | curl 200 + sha256 match; smoke vs prod from Termux only |
+| Backend / sync / auth / push | **Live** (session 8): project `qwrbevhxtflmwkmueqmw` ap-south-1; schema + RLS verified live; `nudge` cron every 15 min; `delete-account`; client sync/auth/push wired. Pending: Site URL in dashboard + first push receipt (Saito) | `web/scripts/live-check.mjs` 17/17; `cd web && ./verify.sh` |
 | Payments, pods, coach, quizzes, calendar | **Nothing.** | — |
 | Real 36-week AI Engineer roadmap | **Imported (A8, session 4).** `plans/ai-engineer-36w.json`, 252 units, bundled in onboarding | `engine/verify.sh` roadmap step |
 
@@ -171,8 +171,8 @@ action per screen. The course line is the only progress element on Today.
    Web Push via VAPID ($0). The only variable cost is the coach's LLM
    tokens (Phase C) — hard-capped per user in Postgres.
 6. **No third-party SDKs in the client** beyond preact. CSP is
-   `default-src 'self'`; `connect-src` will add exactly one Supabase
-   origin in Phase B. No analytics SDK — product events go to our own
+   `default-src 'self'`; `connect-src` adds exactly one Supabase
+   origin (`qwrbevhxtflmwkmueqmw.supabase.co`, since session 8). No analytics SDK — product events go to our own
    `events` table.
 7. **Verification is scripted or it didn't happen.** Every phase below
    lists its gate. `list_migrations` is unreliable (STACK.md) — verify
@@ -218,9 +218,9 @@ HANDOVER.md entry. Do not begin a phase whose entry condition is unmet.
 
 ### Phase B — first backend: auth, sync, push (entry: Saito says "Today works")
 
-- **B1 Supabase project** (free tier). **BLOCKED session 7: overdue invoices on the only org.** Region closest to Karachi (ap-south-1
+- **B1 Supabase project. DONE (session 8):** ref `qwrbevhxtflmwkmueqmw`, ap-south-1, org "Abdul's Den" (Pro, $10/mo). Region closest to Karachi (ap-south-1
   Mumbai). Record project ref and URL in HANDOVER.md; never paste keys.
-- **B2 Schema** — DONE locally (session 7; live apply pending B1) — one migration file `supabase/migrations/0001_core.sql`,
+- **B2 Schema** — DONE live (session 8) — one migration file `supabase/migrations/0001_core.sql`,
   plain Postgres:
   ```
   users(id uuid pk = auth.uid(), tz text, locale text, created_at)
@@ -244,11 +244,11 @@ HANDOVER.md entry. Do not begin a phase whose entry condition is unmet.
   `supabase/verify.sql` run via `execute_sql`, asserting every table has
   `rowsecurity = true` and the expected policy count in `pg_policies`; plus a
   negative test — a second test user cannot read the first user's rows.
-- **B3 Auth.** Built (session 7; email only until an SMS provider exists). Email OTP + phone OTP (Pakistan: phone matters). Anonymous
+- **B3 Auth.** DONE (session 8; email OTP/magic link; phone needs an SMS provider). Email OTP + phone OTP (Pakistan: phone matters). Anonymous
   local use continues to work; sign-in is offered from Settings ("Back up
   and sync"), never forced. Gate: smoke signs in with a Supabase test user
   (service role only in CI env, never in the bundle).
-- **B4 Sync.** Built + e2e (session 7). `web/src/sync.ts`: on sign-in, on app open, on
+- **B4 Sync.** DONE (session 8; live check + e2e). `web/src/sync.ts`: on sign-in, on app open, on
   `visibilitychange`, and after every write — push local completions
   whose ids the server lacks, pull server rows the client lacks, upsert
   enrollment by `updated_at`. Queue survives offline; retries with backoff;
@@ -257,7 +257,7 @@ HANDOVER.md entry. Do not begin a phase whose entry condition is unmet.
   replaying; expired token → keep queue, prompt re-auth. Gate: Playwright
   test — two browser contexts, same user, complete a unit in one, see it
   in the other after reload; offline queue drains after reconnect.
-- **B5 Web Push.** Built (session 7; deploy + Pixel receipt pending B1). VAPID keys in Supabase Vault (public key in bundle is
+- **B5 Web Push.** Deployed (session 8; Pixel receipt pending — Saito). VAPID keys in Supabase Vault (public key in bundle is
   fine). Client subscribes from Settings (opt-in, after a value
   explanation, never on first open). Edge Function `nudge`, run by
   `pg_cron` every 15 min: for each user with push on, compute local time
@@ -268,12 +268,12 @@ HANDOVER.md entry. Do not begin a phase whose entry condition is unmet.
   Deno test for the scheduling function with fixed clock; manual receipt
   on the Pixel logged in HANDOVER.md. Adaptive timing (shift toward actual
   completion hour, EMA over 14 days) is B5b, after two weeks of data.
-- **B6 Metrics.** Built (session 7). Client writes `events` for: `unit_started`, `unit_done`,
+- **B6 Metrics.** DONE live (session 8). Client writes `events` for: `unit_started`, `unit_done`,
   `pushed`, `swapped_review`, `return_started`, `return_done`,
   `replan_accepted`, `notification_opened`. A SQL view per blueprint §8:
   north star, D1/D7/D30/D90, lapse-recovery rate, notification→start.
   Gate: `supabase/metrics.sql` runs and returns rows on seeded data.
-- **B7 Account deletion + export.** Built (session 7). From Settings, server-side cascade.
+- **B7 Account deletion + export.** DONE live (session 8). From Settings, server-side cascade.
   Gate: test user deleted → zero rows across all tables.
 
 **Phase B exit:** SECURITY-BASELINE checklist completed line by line in
@@ -376,8 +376,8 @@ Exact next command: …
 
 1. ~~A8 — where is the 36-week AI Engineer roadmap file?~~ Received and imported (session 4).
 2. A6 — string review: Urdu (Saito) plus Arabic, Chinese, Russian, Spanish (find a reader each).
-3. B1 — Supabase org: "Abdul's Den" has overdue invoices (project creation refused, session 7). Settle, or name a free org.
-4. B5 — confirm he received the first push on the Pixel.
+3. ~~B1 — Supabase org~~ Done: "Abdul's Den", project `qwrbevhxtflmwkmueqmw`.
+4. B5 — set Site URL in the Supabase dashboard, then confirm the first push on the Pixel (HANDOVER s8).
 5. C2 — Instamojo account details; international MoR choice (Paddle vs
    Lemon Squeezy).
 6. D — legal counsel status before commitment deposits.

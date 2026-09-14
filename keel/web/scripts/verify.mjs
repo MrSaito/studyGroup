@@ -11,7 +11,11 @@ for (const p of precache) if (!existsSync(join(dist, p))) fail(`precache entry n
 if (!precache.includes("./index.html")) fail("index.html not precached");
 const html = readFileSync(join(dist, "index.html"), "utf8");
 if (!html.includes('rel="manifest"')) fail("manifest link missing");
-if (/(sk-|eyJhbGci|supabase\.co)/.test(readdirSync(join(dist, "assets")).map((f) => readFileSync(join(dist, "assets", f), "utf8")).join(""))) fail("possible secret in bundle");
+// Secret scan. The Supabase URL and the sb_publishable_ key are public by design (RLS is the boundary);
+// anything that looks like a JWT (legacy anon/service keys), sb_secret_, a service-role mention, or a private key is not.
+const bundleText = readdirSync(join(dist, "assets")).map((f) => readFileSync(join(dist, "assets", f), "utf8")).join("");
+const leak = /(sk-[A-Za-z0-9]{10,}|eyJhbGci[A-Za-z0-9_-]{20,}|sb_secret_[A-Za-z0-9_]+|service_role|vapid_private|BEGIN (EC |RSA )?PRIVATE KEY)/.exec(bundleText);
+if (leak) fail(`possible secret in bundle: ${leak[0].slice(0, 24)}…`);
 // JS budget. Entry = every script index.html loads on first paint (80 KB, unchanged).
 // Lazy = chunks only fetched on demand — today the bundled plan templates
 // (A8: the 36-week roadmap is ~110 KB of Markdown as a string module; it is

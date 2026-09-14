@@ -142,5 +142,6 @@ const t: Partial<Strings> = {
   pushUnsupported: "تحتاج التذكيرات إلى تثبيت Keel على الشاشة الرئيسية (أضف إلى الشاشة الرئيسية ثم أعد الفتح).", // draft
   deleteAccount: "احذف حسابي", // draft
   deleteAccountConfirm: "سيحذف هذا حسابك وكل ما تمت مزامنته معه. وتُحذف نسختك المحلية أيضاً. متابعة؟", // draft
+  linkOrCode: "تحقق من بريدك. اضغط على الرابط فيه، أو اكتب الرمز هنا إن وُجد.", // draft
 };
 export default t;

@@ -1,11 +1,11 @@
 // Backend endpoints. The publishable (anon) key is public by design — RLS is the
-// security boundary (CLAUDE.md §5.6, B5). Filled in by session 7 (Phase B1).
+// security boundary (CLAUDE.md §5.6, B5). Project keel, ref qwrbevhxtflmwkmueqmw, ap-south-1 (session 8).
 // For the local e2e a same-machine fake backend can be substituted, but only
 // when the page itself is served from a loopback host.
 const PROD = {
-  url: "__SUPABASE_URL__",
-  anonKey: "__SUPABASE_ANON_KEY__",
-  vapidPublicKey: "__VAPID_PUBLIC_KEY__",
+  url: "https://qwrbevhxtflmwkmueqmw.supabase.co",
+  anonKey: "sb_publishable_L4QCokZCFT8dnCG1_cUDww_VXGaHxDV",
+  vapidPublicKey: "BKeBSALdZopbMS6yvGeYn1t5Z9WPioLlXZ8IJoZz6Qnx-tz9SsvdNCr0ToeVA0TdN3QjrrsU-VKOKhsDcmTkTyw",
 };
 
 function override(): { url: string; anonKey: string; vapidPublicKey: string } | null {

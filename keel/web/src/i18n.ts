@@ -168,6 +168,7 @@ export const en = {
   pushUnsupported: "Reminders need Keel installed to your Home Screen (Add to Home Screen, then reopen).",
   deleteAccount: "Delete my account",
   deleteAccountConfirm: "This deletes your account and everything synced to it. Your local copy is deleted too. Continue?",
+  linkOrCode: "Check your email. Tap the link in it, or type the code here if there is one.",
 };
 export type Strings = typeof en;
 

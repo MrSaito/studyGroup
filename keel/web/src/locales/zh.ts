@@ -142,5 +142,6 @@ const t: Partial<Strings> = {
   pushUnsupported: "提醒需要将 Keel 安装到主屏幕（添加到主屏幕后重新打开）。", // draft
   deleteAccount: "删除我的账户", // draft
   deleteAccountConfirm: "这将删除你的账户及所有已同步的数据。本地副本也会被删除。继续？", // draft
+  linkOrCode: "查看你的邮箱。点击其中的链接，或如果有验证码就在这里输入。", // draft
 };
 export default t;

@@ -35,7 +35,7 @@ function toSession(d: Record<string, unknown>): Session {
 
 /** Email OTP: GoTrue emails a 6-digit code (and a magic link we do not use). */
 export async function requestEmailOtp(email: string): Promise<void> {
-  await post("/otp", { email, create_user: true });
+  await post("/otp", { email, create_user: true, redirect_to: location.origin + location.pathname });
 }
 export async function verifyEmailOtp(email: string, token: string): Promise<Session> {
   const s = toSession(await post("/verify", { type: "email", email, token }));
@@ -69,4 +69,25 @@ export async function freshSession(): Promise<Session | null> {
     if (e instanceof AuthError && (e.status === 400 || e.status === 401 || e.status === 403)) { await store.clearSession(); throw new AuthExpired(); }
     throw e; // network: keep the session, try later
   }
+}
+
+/**
+ * Magic link landing: GoTrue redirects to the Site URL with `#access_token=…&refresh_token=…&expires_in=…`.
+ * Called once on app load. Returns the stored session or null; always scrubs the hash so tokens never linger in history.
+ */
+export async function captureSessionFromHash(): Promise<Session | null> {
+  const h = location.hash;
+  if (!h.includes("access_token=")) return null;
+  const q = new URLSearchParams(h.replace(/^#/, ""));
+  history.replaceState(null, "", location.pathname + location.search);
+  const access = q.get("access_token"), refresh = q.get("refresh_token");
+  if (!access || !refresh) return null;
+  try {
+    const r = await fetch(`${base()}/user`, { headers: headers({ Authorization: `Bearer ${access}` }) });
+    if (!r.ok) return null;
+    const user = (await r.json()) as { id: string; email?: string; phone?: string };
+    const s: Session = { access_token: access, refresh_token: refresh, expires_at: Math.floor(Date.now() / 1000) + Number(q.get("expires_in") ?? 3600), user: { id: user.id, email: user.email, phone: user.phone } };
+    await store.putSession(s);
+    return s;
+  } catch { return null; }
 }

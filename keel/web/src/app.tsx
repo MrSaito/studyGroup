@@ -74,7 +74,9 @@ export function App() {
         if (backendOn) {
           const be = await import("./backend.ts");
           beRef.current = be;
-          try { setSession(await be.freshSession()); } catch { setSession(null); }
+          const fromLink = await be.captureSessionFromHash();
+          try { setSession(fromLink ?? (await be.freshSession())); } catch { setSession(null); }
+          if (fromLink) { track("signed_in"); be.pushProfile(settings.locale as Locale).catch(() => {}); }
           if (new URLSearchParams(location.search).get("from") === "push") { track("notification_opened"); history.replaceState(null, "", location.pathname); }
           syncRef.current = new be.Sync({
             getRec: () => recRef.current,

@@ -142,5 +142,6 @@ const t: Partial<Strings> = {
   pushUnsupported: "یاد دہانیوں کے لیے Keel کو ہوم اسکرین پر انسٹال کریں (Add to Home Screen، پھر دوبارہ کھولیں)۔", // draft
   deleteAccount: "میرا اکاؤنٹ حذف کریں", // draft
   deleteAccountConfirm: "یہ آپ کا اکاؤنٹ اور اس سے ہم آہنگ سب کچھ حذف کر دے گا۔ مقامی کاپی بھی حذف ہوگی۔ جاری رکھیں؟", // draft
+  linkOrCode: "اپنی ای میل دیکھیں۔ اس میں موجود لنک پر ٹیپ کریں، یا اگر کوڈ ہو تو یہاں لکھیں۔", // draft
 };
 export default t;

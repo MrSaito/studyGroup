@@ -32,6 +32,7 @@ export function SignIn(p: { t: Strings; onSignedIn: () => Promise<void>; compact
       {!sent
         ? <button class="secondary" data-action="send-code" disabled={busy || !/^\S+@\S+\.\S+$/.test(email.trim())} onClick={send}>{t.sendCode}</button>
         : <>
+          <p class="muted">{t.linkOrCode}</p>
           <label>{t.codeLabel}<input inputMode="numeric" autocomplete="one-time-code" name="code" value={code} onInput={(e) => setCode((e.target as HTMLInputElement).value)} /></label>
           <button class="primary" data-action="verify-code" disabled={busy || code.trim().length < 6} onClick={verify}>{t.verify}</button>
           <button class="link" onClick={() => { setSent(false); setCode(""); }}>{t.back}</button>
