@@ -26,7 +26,7 @@ $ cd web && ./verify.sh
 ALL GATES PASSED
 ```
 
-Deployed: **0.2.1 — built by Vercel from this commit; sha256 verification recorded in the follow-up commit.**
+Deployed: **yes — 0.2.1 live** at https://keel-hshahfahad58-2498s-projects.vercel.app/ (deployment `dpl_HEVs1mfm66oue9Nc8q84nRfBY6tF`, built by Vercel from commit `feed5f9`). Verified from the sandbox: all 14 production files (entry, roadmap chunk, five locale chunks, css, html, sw, manifest, icons) sha256-equal to the local `dist/` that passed the gate; `SW_VERSION = "0.2.1-060202c3"` served; CSP / DENY headers present; assets immutable. Existing installs pick it up on next open (SW hash changed). Smoke vs prod: from Termux.
 
 Decisions made (with reason):
 - **§4 changed — multi-unit days.** Was: one unit per day, full stop. Now: a completion row dated today still makes `projection.today === null` (the card says "Done for today"), but the learner may open the next non-buffer unit and each `done` advances. Justification: Saito asked for it; the elastic schedule was already symmetric in the engine (deficit floors at 0, remaining units lay out from tomorrow), so the change is UI + one test, and the blueprint's anti-cramming intent is kept by (a) never offering a rest/buffer unit early, (b) consistency counting session-days not units, so binge days do not inflate the score.
