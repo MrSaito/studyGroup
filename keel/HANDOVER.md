@@ -26,7 +26,7 @@ $ cd web && ./verify.sh
 ALL GATES PASSED
 ```
 
-Deployed: **0.2.0 — built by Vercel from this commit; sha256 verification recorded in the follow-up commit.**
+Deployed: **yes — 0.2.0 live** at https://keel-hshahfahad58-2498s-projects.vercel.app/ (deployment `dpl_BzF1xSfHymp2owHLRdRysUHGchME`, built by Vercel from commit `8d3d7ec`). Verified from the sandbox: all 9 production files sha256-equal to the local `dist/` that passed the gate; `SW_VERSION = "0.2.0-fdeddd98"` served; CSP / nosniff / DENY / no-referrer headers present; `sw.js` no-store, `assets/*` immutable. First attempt (`dpl_FA2d17…`) failed before deploying because Vercel's restored build cache still held the previous `repo/` clone — `build.sh` now `rm -rf repo out` first; production was never touched by the failed build. Smoke vs prod: not runnable from this sandbox (see Decisions); run from Termux.
 
 Decisions made (with reason):
 - **§4 semantics extended, not changed:** `skipped` is a fourth outcome. It advances the unit (never served again), is not a session (consistency and lapse ignore it), and — the one deliberate deviation from "any completion row dated today makes today null" — does **not** spend the day, because it is recorded from the Plan screen, possibly weeks ahead, and must not turn today's card into "Done for today". Encoded in the `skipped` test. The three original outcomes are untouched.
