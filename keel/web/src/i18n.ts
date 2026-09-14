@@ -73,6 +73,30 @@ const en = {
   planCompleteHint: "Every unit done. Import a new plan from Settings whenever you're ready.",
   invalidPlan: "That plan didn't import:",
   storageFail: "Couldn't save on this device. Storage may be full or blocked in private mode.",
+  importFile: "…or choose a file (.md or .json)",
+  plan: "Plan",
+  typeLearn: "Learn",
+  typeBuild: "Build",
+  typeReview: "Review",
+  typeRest: "Rest",
+  skipUnit: "Skip this unit",
+  skipReason: "Why are you skipping it?",
+  skipHint: "It won't be shown again. Skipping isn't a session.",
+  skipConfirm: "Skip",
+  skipped: "Skipped",
+  weeklyReview: "Weekly review",
+  weeklyReviewHint: "Five minutes: what stuck, what didn't.",
+  reviewedThisWeek: "Reviewed this week",
+  quizTitle: "From memory",
+  quizHint: "Before you reveal, say out loud what you remember.",
+  quizQuestion: "What do you remember from",
+  reveal: "Show what I wrote",
+  youWrote: "You wrote",
+  noQuiz: "Nothing old enough to quiz yet — your notes come back here a week after you write them.",
+  qFinished: "What did you finish this week?",
+  qStuck: "Where did you get stuck?",
+  qNext: "What's the one thing for next week?",
+  saveReview: "Save review",
 };
 export type Strings = typeof en;
 
@@ -146,6 +170,30 @@ const ur: Strings = {
   planCompleteHint: "ہر یونٹ مکمل۔ جب چاہیں ترتیبات سے نیا منصوبہ درآمد کریں۔",
   invalidPlan: "یہ منصوبہ درآمد نہیں ہوا:",
   storageFail: "اس آلے پر محفوظ نہیں ہو سکا۔ اسٹوریج بھر گئی ہو یا نجی موڈ میں بند ہو۔",
+  importFile: "…یا فائل چنیں (.md یا .json)", // draft
+  plan: "منصوبہ", // draft
+  typeLearn: "سیکھیں", // draft
+  typeBuild: "بنائیں", // draft
+  typeReview: "جائزہ", // draft
+  typeRest: "آرام", // draft
+  skipUnit: "یہ یونٹ چھوڑ دیں", // draft
+  skipReason: "آپ اسے کیوں چھوڑ رہے ہیں؟", // draft
+  skipHint: "یہ دوبارہ نہیں دکھایا جائے گا۔ چھوڑنا سیشن نہیں ہے۔", // draft
+  skipConfirm: "چھوڑ دیں", // draft
+  skipped: "چھوڑ دیا", // draft
+  weeklyReview: "ہفتہ وار جائزہ", // draft
+  weeklyReviewHint: "پانچ منٹ: کیا یاد رہا، کیا نہیں۔", // draft
+  reviewedThisWeek: "اس ہفتے جائزہ ہو گیا", // draft
+  quizTitle: "یادداشت سے", // draft
+  quizHint: "دکھانے سے پہلے، جو یاد ہے بلند آواز میں کہیں۔", // draft
+  quizQuestion: "آپ کو کیا یاد ہے:", // draft
+  reveal: "دکھائیں میں نے کیا لکھا", // draft
+  youWrote: "آپ نے لکھا", // draft
+  noQuiz: "ابھی کچھ اتنا پرانا نہیں کہ پوچھا جائے — آپ کے نوٹس لکھنے کے ایک ہفتے بعد یہاں واپس آتے ہیں۔", // draft
+  qFinished: "اس ہفتے آپ نے کیا مکمل کیا؟", // draft
+  qStuck: "آپ کہاں اٹکے؟", // draft
+  qNext: "اگلے ہفتے کی ایک چیز کیا ہے؟", // draft
+  saveReview: "جائزہ محفوظ کریں", // draft
 };
 
 export const STRINGS: Record<Locale, Strings> = { en, ur };

@@ -25,13 +25,13 @@ re-plan offer (7 days), or a restart/archive prompt (21 days). Never shows
 "overdue", never shows a count of missed days, never uses red. Everything
 else in the blueprint is secondary to that loop.
 
-## 2. Current state (2026-09-14, session 4)
+## 2. Current state (2026-09-14, session 5)
 
 | Layer | State | Proof |
 |---|---|---|
-| `engine/` `@keel/engine` 0.1.0 | **Done.** Pure TS, zero runtime deps, 28 tests | `cd engine && ./verify.sh` |
-| `web/` `@keel/web` 0.1.1 | **Local-only MVP shell done.** Preact+Vite PWA, IndexedDB, en+ur, offline; bundled 36-week roadmap (lazy chunk) | `cd web && ./verify.sh` |
-| Production | **Live**, static, public: https://keel-hshahfahad58-2498s-projects.vercel.app/ | curl 200 + sha256 match + smoke vs prod |
+| `engine/` `@keel/engine` 0.1.0 | **Done.** Pure TS, zero runtime deps, 31 tests; `skipped` outcome; weekly review/quiz | `cd engine && ./verify.sh` |
+| `web/` `@keel/web` 0.2.0 | **Phase A complete.** Preact+Vite PWA, IndexedDB v2, en+ur, offline; roadmap template, plan screen + skip, weekly review, file import, reload-safe timer | `cd web && ./verify.sh` |
+| Production | **Live 0.2.0**, public: https://keel-hshahfahad58-2498s-projects.vercel.app/ — Vercel builds from a pinned commit (HANDOVER s5) | curl 200 + sha256 match; smoke vs prod from Termux only |
 | Backend / sync / auth / push | **Nothing.** | — |
 | Payments, pods, coach, quizzes, calendar | **Nothing.** | — |
 | Real 36-week AI Engineer roadmap | **Imported (A8, session 4).** `plans/ai-engineer-36w.json`, 252 units, bundled in onboarding | `engine/verify.sh` roadmap step |
@@ -61,6 +61,7 @@ keel/                             ← lives at keel/ inside the mrsaito/studygro
 │   ├── src/importMarkdown.ts     Markdown roadmap → Plan
 │   ├── src/schedule.ts           project(): elastic projection
 │   ├── src/consistency.ts        consistency(), lapse()
+│   ├── src/review.ts             weekStart(), isReviewDay(), retrievalQuiz()
 │   ├── src/recovery.ts           buildReturnUnit(), halveNextTwoWeeks()
 │   ├── bin/keel-plan.ts          CLI: import | validate | project
 │   ├── test/engine.test.ts       node:test, 25 cases
@@ -87,7 +88,8 @@ Commands you will run constantly:
 cd engine && ./verify.sh                    # engine gate
 cd web && ./verify.sh                       # full gate (calls engine gate)
 cd web && npm run dev                       # local dev
-cd web && npm run build && npx vercel --prod dist   # deploy (vercel login once)
+cd web && npm run build && npx vercel --prod dist   # deploy from Termux (vercel login once)
+# or: push the commit, then ask Claude to deploy via the Vercel MCP (builds from the pinned SHA; HANDOVER s5)
 KEEL_URL=https://keel-hshahfahad58-2498s-projects.vercel.app/ python3 scripts/smoke.py
 node engine/bin/keel-plan.ts import <roadmap.md> > plans/<slug>.json
 ```
@@ -107,7 +109,10 @@ can't shift a day. `web/src/clock.ts` is the only `new Date()` for "today".
   session; unit does **not** advance. Return units record this against the
   current plan unit.
 - `pushed` — day spent, no session, nothing advances.
-- Any completion row dated today makes `projection.today === null`.
+- `skipped` — recorded from the Plan screen with a reason; unit advances
+  (never served again), not a session, and does **not** spend the day.
+- Any `done`/`swapped_review`/`pushed` row dated today makes
+  `projection.today === null`; a `skipped` row never does.
 
 **Buffers.** `type: "rest", is_buffer: true`. On schedule → served as a rest
 day the learner marks done. Behind → consumed silently, one per deficit
@@ -177,21 +182,21 @@ HANDOVER.md entry. Do not begin a phase whose entry condition is unmet.
 
 - **A1 Dedupe sample plan. DONE (session 4).** Make `web` import `../engine/examples/sample-plan.md?raw`
   via a Vite alias; delete `web/src/sample-plan.md`. Gate: `web/verify.sh`.
-- **A2 Timer survives backgrounding.** Store `startedAt` epoch + accumulated
+- **A2 Timer survives backgrounding. DONE (session 5).** Store `startedAt` epoch + accumulated
   seconds in component state; compute elapsed on `visibilitychange`. Gate:
   Playwright test that advances the clock 5 min while hidden and asserts
   the display.
-- **A3 Weekly review (blueprint §3.6, §5.7, free tier).** Friday/Sunday
+- **A3 Weekly review (blueprint §3.6, §5.7, free tier). DONE (session 5).** Friday/Sunday
   prompt: 3 questions (finished / stuck / next week) stored as a
   `reviews` row locally; rule-based retrieval quiz — 3 items drawn from
   `log_text` of completed units older than 7 days, shown as prompts, no
   grading. Gate: unit tests for quiz selection (deterministic seed) +
   smoke path.
-- **A4 Plan screen (§5.5).** Read-only sequence, grouped by stage/week;
+- **A4 Plan screen (§5.5). DONE (session 5).** Read-only sequence, grouped by stage/week;
   mark a unit "skipped with reason" → new completion outcome `skipped`
   (advances, not a session; add to engine with tests). Gate: engine tests
   + smoke.
-- **A5 Import from file.** `<input type=file accept=.md,.json>` alongside
+- **A5 Import from file. DONE (session 5).** `<input type=file accept=.md,.json>` alongside
   the paste box. Gate: smoke uploads `sample-plan.md`.
 - **A6 Urdu review.** Saito supplies corrected strings; replace the
   machine draft in `i18n.ts` and `recovery.ts`. Gate: a native reader
@@ -204,7 +209,7 @@ HANDOVER.md entry. Do not begin a phase whose entry condition is unmet.
   roadmap"). Gate: `keel-plan validate` 0 errors; bundle stays < 120 KB
   (raise the `verify.mjs` limit explicitly, with the reason).
 
-**Phase A exit:** all gates green, APP_VERSION 0.2.0, deployed, smoke vs prod.
+**Phase A exit:** all gates green, APP_VERSION 0.2.0, deployed, smoke vs prod. **Reached in session 5** (A6/A7 remain open on Saito's input; they do not block Phase B).
 
 ### Phase B — first backend: auth, sync, push (entry: Saito says "Today works")
 

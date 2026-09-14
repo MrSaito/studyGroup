@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
-import { consistency, lapse, project, type Completion, type Enrollment, type Plan } from "@keel/engine";
-import { store, type EnrollmentRecord, type CompletionRow, type Settings } from "./store.ts";
+import { buildReturnUnit, consistency, lapse, project, type Completion, type Enrollment, type Plan } from "@keel/engine";
+import { store, type EnrollmentRecord, type CompletionRow, type ReviewRow, type Settings } from "./store.ts";
 import { todayLocal } from "./clock.ts";
 import { STRINGS, RTL, type Locale, type Strings } from "./i18n.ts";
 import { Onboarding } from "./screens/Onboarding.tsx";
@@ -8,9 +8,11 @@ import { Today } from "./screens/Today.tsx";
 import { UnitScreen } from "./screens/Unit.tsx";
 import { Progress } from "./screens/Progress.tsx";
 import { SettingsScreen } from "./screens/Settings.tsx";
+import { PlanScreen } from "./screens/Plan.tsx";
+import { ReviewScreen } from "./screens/Review.tsx";
 import type { Unit } from "@keel/engine";
 
-export type Screen = { name: "today" } | { name: "unit"; unit: Unit; mode: "plan" | "review" } | { name: "progress" } | { name: "settings" };
+export type Screen = { name: "today" } | { name: "unit"; unit: Unit; mode: "plan" | "review" } | { name: "plan" } | { name: "progress" } | { name: "review" } | { name: "settings" };
 
 export interface Ctx {
   t: Strings;
@@ -19,8 +21,10 @@ export interface Ctx {
   rec: EnrollmentRecord;
   enrollment: Enrollment;
   completions: CompletionRow[];
+  reviews: ReviewRow[];
   go: (s: Screen) => void;
   complete: (c: Completion) => Promise<void>;
+  addReview: (r: Omit<ReviewRow, "id" | "created_at">) => Promise<void>;
   replacePlan: (p: Plan) => Promise<void>;
   reset: () => Promise<void>;
   restart: (r: EnrollmentRecord) => Promise<void>;
@@ -31,6 +35,7 @@ export function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [rec, setRec] = useState<EnrollmentRecord | null | undefined>(undefined);
   const [completions, setCompletions] = useState<CompletionRow[]>([]);
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [screen, setScreen] = useState<Screen>({ name: "today" });
   const [today, setToday] = useState(todayLocal());
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +43,22 @@ export function App() {
   useEffect(() => {
     (async () => {
       try {
-        setSettings(await store.getSettings());
-        setRec((await store.getEnrollment()) ?? null);
-        setCompletions(await store.listCompletions());
+        const settings = await store.getSettings();
+        const rec = (await store.getEnrollment()) ?? null;
+        const completions = await store.listCompletions();
+        setSettings(settings); setRec(rec); setCompletions(completions);
+        setReviews(await store.listReviews());
+        // A2: a unit with a timer in progress reopens where the learner left it after a reload.
+        const timer = await store.getTimer();
+        if (rec && timer) {
+          const unit = rec.plan.units.find((u) => u.id === timer.unit_id);
+          if (unit) setScreen({ name: "unit", unit, mode: "plan" });
+          else if (timer.unit_id.startsWith("return-")) {
+            const e: Enrollment = { plan: rec.plan, started_at: rec.started_at, availability: rec.availability, completions };
+            const r = buildReturnUnit(e, settings.locale);
+            if (r.id === timer.unit_id) setScreen({ name: "unit", unit: r, mode: "review" });
+          }
+        }
       } catch (e) { setError(String(e)); setRec(null); setSettings({ locale: "en" }); }
     })();
     // Roll the date when the app is resumed after midnight.
@@ -73,15 +91,19 @@ export function App() {
   }
 
   const ctx: Ctx = {
-    t, locale, today, rec, enrollment, completions,
+    t, locale, today, rec, enrollment, completions, reviews,
     go: setScreen,
     complete: async (c) => {
       try { const row = await store.appendCompletion(c); setCompletions((xs) => [...xs, row]); }
       catch { setError(t.storageFail); }
     },
+    addReview: async (r) => {
+      try { const row = await store.addReview(r); setReviews((xs) => [...xs, row]); }
+      catch { setError(t.storageFail); }
+    },
     replacePlan: async (plan) => { const r = { ...rec, plan }; await store.putEnrollment(r); setRec(r); },
-    reset: async () => { await store.reset(); setRec(null); setCompletions([]); setScreen({ name: "today" }); },
-    restart: async (r) => { await store.reset(); await store.putEnrollment(r); setRec(r); setCompletions([]); setScreen({ name: "today" }); },
+    reset: async () => { await store.reset(); setRec(null); setCompletions([]); setReviews([]); setScreen({ name: "today" }); },
+    restart: async (r) => { await store.reset(); await store.putEnrollment(r); setRec(r); setCompletions([]); setReviews([]); setScreen({ name: "today" }); },
     setLocale,
   };
 
@@ -95,13 +117,15 @@ export function App() {
       {error && <p class="notice" role="alert">{error}</p>}
       {screen.name === "today" && <Today ctx={ctx} projection={projection} lapseState={lapseState} />}
       {screen.name === "unit" && <UnitScreen ctx={ctx} unit={screen.unit} mode={screen.mode} projection={projection} />}
+      {screen.name === "plan" && <PlanScreen ctx={ctx} projection={projection} />}
       {screen.name === "progress" && <Progress ctx={ctx} projection={projection} score={score} />}
+      {screen.name === "review" && <ReviewScreen ctx={ctx} />}
       {screen.name === "settings" && <SettingsScreen ctx={ctx} />}
-      {screen.name !== "unit" && (
+      {screen.name !== "unit" && screen.name !== "review" && (
         <nav class="tabs" aria-label="Sections">
-          <button class={screen.name === "today" ? "on" : ""} onClick={() => setScreen({ name: "today" })}>{t.today}</button>
-          <button class={screen.name === "progress" ? "on" : ""} onClick={() => setScreen({ name: "progress" })}>{t.progress}</button>
-          <button class={screen.name === "settings" ? "on" : ""} onClick={() => setScreen({ name: "settings" })}>{t.settings}</button>
+          {([["today", t.today], ["plan", t.plan], ["progress", t.progress], ["settings", t.settings]] as const).map(([name, label]) => (
+            <button key={name} data-tab={name} class={screen.name === name ? "on" : ""} aria-current={screen.name === name ? "page" : undefined} onClick={() => setScreen({ name } as Screen)}>{label}</button>
+          ))}
         </nav>
       )}
     </main>

@@ -69,6 +69,16 @@ export function Onboarding(p: { t: Strings; locale: Locale; setLocale: (l: Local
         <h2>{t.onboardPlan}</h2>
         <p class="muted">{t.onboardPlanHint}</p>
         <textarea rows={8} value={planText} onInput={(e) => setPlanText((e.target as HTMLTextAreaElement).value)} spellcheck={false} />
+        <label class="file">{t.importFile}
+          <input type="file" accept=".md,.json,.markdown,text/markdown,application/json,text/plain" onChange={async (e) => {
+            const input = e.target as HTMLInputElement;
+            const f = input.files?.[0];
+            if (!f) return;
+            try { const text = await f.text(); setPlanText(text); tryImport(text); }
+            catch { setPlanErr(t.templateLoadFail); }
+            finally { input.value = ""; }
+          }} />
+        </label>
         {planErr && <p class="notice">{planErr}</p>}
         <button class="primary" disabled={planText.trim().length === 0 || loading !== null} onClick={() => tryImport(planText)}>{t.importPlan}</button>
         <button class="secondary" data-template="ai-engineer-36w" disabled={loading !== null} aria-busy={loading === "ai-engineer-36w"} onClick={() => useTemplate(TEMPLATES["ai-engineer-36w"])}>{loading === "ai-engineer-36w" ? t.loading : t.useRoadmap}</button>

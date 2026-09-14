@@ -46,7 +46,14 @@ export interface Availability {
   minutes_per_day: number;
 }
 
-export type CompletionOutcome = "done" | "swapped_review" | "pushed";
+/**
+ * done           → unit advances; a session.
+ * swapped_review → a session; unit does not advance.
+ * pushed         → day spent; no session; nothing advances.
+ * skipped        → unit advances (never served again); not a session; does
+ *                  NOT spend the day (recorded from the Plan screen, A4).
+ */
+export type CompletionOutcome = "done" | "swapped_review" | "pushed" | "skipped";
 
 /** Append-only record (Blueprint §7 `completions`). */
 export interface Completion {

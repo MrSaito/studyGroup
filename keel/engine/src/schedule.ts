@@ -7,6 +7,8 @@
 //   swapped_review  → unit does NOT advance (learner did a 10-min review
 //                     instead); counts as a session for consistency.
 //   pushed          → nothing advances; not a session; today is spent.
+//   skipped         → unit advances (Plan screen, with a reason); not a
+//                     session; the day is NOT spent (A4, session 5).
 
 import { addDays, compareDates, countAvailableDays, nextAvailable } from "./dates.ts";
 import type { Enrollment, Projection, ProjectedUnit, Unit } from "./types.ts";
@@ -17,9 +19,22 @@ export function doneUnitIds(e: Enrollment): Set<string> {
   return s;
 }
 
-/** Any completion row (any outcome) dated `date` means that day is spent. */
+export function skippedUnitIds(e: Enrollment): Set<string> {
+  const s = new Set<string>();
+  for (const c of e.completions) if (c.outcome === "skipped") s.add(c.unit_id);
+  return s;
+}
+
+/** Units the sequence has moved past: done or skipped. */
+export function advancedUnitIds(e: Enrollment): Set<string> {
+  const s = doneUnitIds(e);
+  for (const id of skippedUnitIds(e)) s.add(id);
+  return s;
+}
+
+/** A done / swapped_review / pushed row dated `date` means that day is spent. A skip never spends a day. */
 export function daySpent(e: Enrollment, date: string): boolean {
-  return e.completions.some((c) => c.date === date);
+  return e.completions.some((c) => c.date === date && c.outcome !== "skipped");
 }
 
 /** Days on which a real session happened (done or swapped_review). */
@@ -39,6 +54,7 @@ export function project(e: Enrollment, today: string): Projection {
   }
   const units = e.plan.units;
   const done = doneUnitIds(e);
+  const advanced = advancedUnitIds(e);
 
   // Elapsed sessions the learner *could* have done: available days in [start, yesterday].
   const elapsed = countAvailableDays(e.started_at, addDays(today, -1), e.availability.days);
@@ -59,7 +75,7 @@ export function project(e: Enrollment, today: string): Projection {
   let cursor = daySpent(e, today) ? nextAvailable(addDays(today, 1), e.availability.days) : nextAvailable(today, e.availability.days);
 
   for (const u of units) {
-    if (done.has(u.id)) continue;
+    if (advanced.has(u.id)) continue;
     if (u.is_buffer) {
       if (retroConsumed(u)) continue;
       if (deficit > 0) { deficit--; buffersConsumed++; continue; }

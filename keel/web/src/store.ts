@@ -16,8 +16,26 @@ export interface CompletionRow extends Completion {
   created_at: string;   // ISO timestamp
 }
 export interface Settings { locale: "en" | "ur" }
+/** Weekly review answers (Blueprint §3.6). Keyed by the Monday of the week. */
+export interface ReviewRow {
+  id: string;
+  week_start: string;
+  finished: string;
+  stuck: string;
+  next: string;
+  created_at: string;
+}
+/** Timer state for the unit currently open, so a reload or a backgrounded tab never loses time (A2). */
+export interface TimerState {
+  unit_id: string;
+  /** Epoch ms when the current run started, or null when paused. */
+  started_at: number | null;
+  /** Seconds accumulated before the current run. */
+  base: number;
+  log: string;
+}
 
-const DB = "keel", VERSION = 1;
+const DB = "keel", VERSION = 2;
 
 function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -26,6 +44,7 @@ function open(): Promise<IDBDatabase> {
       const db = req.result;
       if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
       if (!db.objectStoreNames.contains("completions")) db.createObjectStore("completions", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("reviews")) db.createObjectStore("reviews", { keyPath: "id" });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -55,14 +74,28 @@ export const store = {
     const row: CompletionRow = { ...c, id: crypto.randomUUID(), created_at: new Date().toISOString() };
     return tx("completions", "readwrite", (s) => s.add(row)).then(() => row);
   },
+  listReviews: async (): Promise<ReviewRow[]> => {
+    const rows = await tx<ReviewRow[]>("reviews", "readonly", (s) => s.getAll());
+    return rows.sort((a, b) => (a.week_start < b.week_start ? -1 : 1));
+  },
+  addReview: (r: Omit<ReviewRow, "id" | "created_at">): Promise<ReviewRow> => {
+    const row: ReviewRow = { ...r, id: crypto.randomUUID(), created_at: new Date().toISOString() };
+    return tx("reviews", "readwrite", (s) => s.add(row)).then(() => row);
+  },
+  getTimer: () => tx<TimerState | undefined>("kv", "readonly", (s) => s.get("timer")),
+  putTimer: (t: TimerState) => tx("kv", "readwrite", (s) => s.put(t, "timer")),
+  clearTimer: () => tx("kv", "readwrite", (s) => s.delete("timer")),
   /** Full wipe. Used by "Delete plan and history" and archive. */
   reset: async () => {
     await tx("kv", "readwrite", (s) => s.delete("enrollment"));
+    await tx("kv", "readwrite", (s) => s.delete("timer"));
     await tx("completions", "readwrite", (s) => s.clear());
+    await tx("reviews", "readwrite", (s) => s.clear());
   },
   exportAll: async () => ({
     exported_at: new Date().toISOString(),
     enrollment: await store.getEnrollment(),
     completions: await store.listCompletions(),
+    reviews: await store.listReviews(),
   }),
 };

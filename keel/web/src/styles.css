@@ -94,3 +94,29 @@ label { display: block; color: var(--tide); font-size: 15px; }
 .tabs button.on { color: var(--ink); font-weight: 600; box-shadow: inset 0 2px 0 var(--ink); }
 
 @media (prefers-reduced-motion: reduce) { .course-dot { transition: none; } }
+
+/* Plan screen (A4) */
+.plan-list { list-style: none; margin: 0 0 6px; padding: 0; }
+.plan-row { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.plan-row .seq { color: var(--tide); font-size: 13px; font-variant-numeric: tabular-nums; }
+.plan-title { display: block; }
+.plan-meta { display: block; color: var(--tide); font-size: 13px; }
+.plan-row.done .plan-title { color: var(--tide); text-decoration: line-through; text-decoration-color: var(--shoal); }
+.plan-row.skipped .plan-title { color: var(--tide); font-style: italic; }
+.plan-row.current .plan-title { font-weight: 600; }
+.plan-row.buffer .plan-title, .plan-row.consumed .plan-title { color: var(--tide); }
+.plan-row .link { padding: 4px 0; margin: 0; font-size: 14px; white-space: nowrap; }
+.plan .week-label { display: block; margin-top: 10px; }
+.sheet h3 { color: var(--ink); margin-top: 0; font-size: 18px; }
+/* Progress: a skipped unit is hollow with a dashed edge (never colour-only: aria-label carries the state) */
+.cell.skipped { background: transparent; border: 1.5px dashed var(--tide); }
+/* Weekly review (A3) */
+.review-card { border: 1.5px solid var(--line); border-radius: var(--radius); padding: 12px 14px 4px; margin: 0 0 20px; }
+.review-card .eyebrow { margin: 0 0 4px; }
+.review-card .secondary { margin: 6px 0 10px; }
+.quiz-item { margin: 0 0 16px; }
+.quiz-item .why { margin: 8px 0 0; }
+.quiz-item .link { padding: 4px 0; }
+/* File import (A5) */
+.file { margin: -6px 0 12px; }
+input[type=file] { background: transparent; border: 0; padding: 6px 0; font-size: 15px; }

@@ -1,18 +1,21 @@
-import { doneUnitIds, type ConsistencyScore, type Projection, type Unit } from "@keel/engine";
+import { doneUnitIds, skippedUnitIds, weekStart, type ConsistencyScore, type Projection, type Unit } from "@keel/engine";
 import type { Ctx } from "../app.tsx";
 import { CourseLine } from "./Today.tsx";
 
-type Cell = "done" | "current" | "todo" | "buffer" | "buffer-done";
+type Cell = "done" | "skipped" | "current" | "todo" | "buffer" | "buffer-done";
 
 export function Progress(p: { ctx: Ctx; projection: Projection; score: ConsistencyScore }) {
   const { ctx, projection, score } = p;
   const { t } = ctx;
   const done = doneUnitIds(ctx.enrollment);
+  const skipped = skippedUnitIds(ctx.enrollment);
+  const reviewed = ctx.reviews.some((r) => r.week_start === weekStart(ctx.today));
   const currentId = projection.items[0]?.unit.id;
   const inProjection = new Set(projection.items.map((i) => i.unit.id));
   const cellOf = (u: Unit): Cell => {
     if (u.id === currentId) return "current";
     if (done.has(u.id)) return u.is_buffer ? "buffer-done" : "done";
+    if (skipped.has(u.id)) return "skipped";
     if (u.is_buffer) return inProjection.has(u.id) ? "buffer" : "buffer-done"; // consumed
     return "todo";
   };
@@ -30,6 +33,9 @@ export function Progress(p: { ctx: Ctx; projection: Projection; score: Consisten
       <h2>{ctx.enrollment.plan.title}</h2>
       <CourseLine ctx={ctx} projection={projection} />
       <p class="score"><strong>{score.percent}%</strong> <span class="muted">{t.ofLast28}</span></p>
+      {reviewed
+        ? <p class="muted" data-reviewed>{t.reviewedThisWeek}</p>
+        : <button class="secondary" data-action="review" onClick={() => ctx.go({ name: "review" })}>{t.weeklyReview}</button>}
       {[...stages.entries()].map(([stage, weeks]) => (
         <div class="stage" key={stage}>
           <h3>{t.stage} {stage}</h3>

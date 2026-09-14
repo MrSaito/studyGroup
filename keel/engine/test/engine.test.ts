@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import {
   importMarkdown, validatePlan, project, consistency, lapse, buildReturnUnit,
   halveNextTwoWeeks, addDays, countAvailableDays, weekday, unitsExceedingBudget,
+  daySpent, weekStart, isReviewDay, retrievalQuiz, seedFrom,
   type Enrollment, type Completion, type Plan, type Weekday,
 } from "../src/index.ts";
 
@@ -329,4 +330,56 @@ test("roadmap import is deterministic and matches the committed plans/ai-enginee
   assert.equal(p.today?.title, "Set up the machine");
   assert.equal(p.position, "Day 1 of 252 — Stage 0, Week 1");
   assert.equal(p.projected_finish, addDays(MON, 251));
+});
+
+// ---------- skipped outcome (A4) ----------
+test("skipped: unit advances and is never served again; not a session; does not spend the day", () => {
+  const plan = importMarkdown(md);
+  const u1 = plan.units[0]!, u2 = plan.units[1]!;
+  const e = enroll(plan, ALL_DAYS, [{ unit_id: u1.id, date: MON, outcome: "skipped", log_text: "already know this" }]);
+  const p = project(e, MON);
+  assert.equal(p.today?.id, u2.id, "today moves to the next unit");
+  assert.equal(daySpent(e, MON), false);
+  assert.ok(!p.items.some((i) => i.unit.id === u1.id));
+  assert.equal(p.position, "Day 2 of 10 — Stage 1, Week 1");
+  assert.equal(p.projected_finish, addDays(MON, 8), "one fewer unit → finish one day earlier");
+  // Not a session: consistency and lapse ignore it.
+  const later = addDays(MON, 4);
+  const eLater = enroll(plan, ALL_DAYS, [{ unit_id: u1.id, date: addDays(MON, 3), outcome: "skipped" }]);
+  assert.equal(lapse(eLater, later).consecutive_missed_days, 4);
+  assert.equal(consistency(eLater, later).completed, 0);
+  // Return unit targets the first non-skipped unit.
+  assert.equal(buildReturnUnit(eLater).id, `return-${u2.id}`);
+});
+
+// ---------- weekly review + retrieval quiz (A3) ----------
+test("weekStart is the Monday on or before; review days are Friday and Sunday", () => {
+  assert.equal(weekStart(MON), MON);
+  assert.equal(weekStart(addDays(MON, 6)), MON); // Sunday belongs to the week that started Monday
+  assert.equal(weekStart(addDays(MON, 7)), addDays(MON, 7));
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 6].map((i) => isReviewDay(addDays(MON, i))), [false, false, false, false, true, false, true]);
+});
+
+test("retrievalQuiz: only done units with a log ≥7 days old, one per unit, no buffers, ≤3, deterministic per week, in plan order", () => {
+  const plan = importMarkdown(md);
+  const comps: Completion[] = plan.units.map((u, i) => ({ unit_id: u.id, date: addDays(MON, i), outcome: "done" as const, log_text: `note ${i + 1}` }));
+  comps[2] = { ...comps[2]!, log_text: "   " };               // no usable log
+  comps.push({ unit_id: plan.units[0]!.id, date: addDays(MON, 12), outcome: "done", log_text: "again" }); // duplicate unit
+  const today = addDays(MON, 14);
+  const e = enroll(plan, ALL_DAYS, comps);
+  const q = retrievalQuiz(e, today);
+  assert.equal(q.length, 3);
+  assert.deepEqual(q.map((i) => i.unit.seq), [...q.map((i) => i.unit.seq)].sort((a, b) => a - b));
+  for (const item of q) {
+    assert.ok(!item.unit.is_buffer);
+    assert.ok(item.log_text.trim().length > 0);
+    assert.ok(addDays(item.date, 7) <= today, `${item.date} is too recent`);
+  }
+  assert.ok(!q.some((i) => i.unit.seq === 3), "unit with blank log excluded");
+  assert.deepEqual(retrievalQuiz(e, today), q, "same inputs → same quiz");
+  assert.deepEqual(retrievalQuiz(e, today, 3, seedFrom(weekStart(today))), q, "default seed is the week's Monday");
+  // Later in the same week the pool can grow (more logs cross the 7-day line); the seed stays the same.
+  assert.equal(seedFrom(weekStart(addDays(today, 3))), seedFrom(weekStart(today)));
+  assert.notDeepEqual(retrievalQuiz(e, today, 3, seedFrom("other")), q, "different seed → different draw");
+  assert.equal(retrievalQuiz(enroll(plan, ALL_DAYS, comps), addDays(MON, 2)).length, 0, "nothing old enough yet");
 });

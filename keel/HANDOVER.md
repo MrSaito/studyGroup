@@ -1,3 +1,56 @@
+# HANDOVER.md — Keel, session 5 (2026-09-14) — Phase A complete: A2 A3 A4 A5, 0.2.0
+
+## Session 5 — 2026-09-14 — A2 timer · A3 weekly review · A4 plan screen + `skipped` · A5 file import · Phase A exit
+Built:
+- **A2 `web/src/screens/Unit.tsx`** — timer is `base + (now − started_at)`; nothing depends on the interval firing. Ticks stop while hidden and a `visibilitychange` recomputes synchronously. State (`started_at`, `base`, draft log) persists in IndexedDB `kv.timer`; `app.tsx` reopens the running unit after a reload (plan units and the Return unit). Done clears it.
+- **A3 `engine/src/review.ts`** — `weekStart` (Monday), `isReviewDay` (Fri/Sun), `retrievalQuiz` (done units with a log ≥7 days old, one per unit, no buffers, ≤3, PRNG seeded from the week's Monday, returned in plan order), `seedFrom`/`seededRandom` (FNV-1a + mulberry32, zero deps). `web/src/screens/Review.tsx` — recall-before-reveal quiz, then finished / stuck / next → `reviews` row. Nudge card on Today on Fri/Sun until the week has a row; always reachable from Progress ("Weekly review" → "Reviewed this week").
+- **A4** — engine: `CompletionOutcome` gains `skipped`; `advancedUnitIds` (done ∪ skipped) drives the projection; `skippedUnitIds`; `daySpent` ignores skips; `buildReturnUnit` targets the first non-advanced unit. `web/src/screens/Plan.tsx` — read-only sequence by stage/week with projected dates; "Skip this unit" on current/todo non-buffer units → reason sheet → `skipped` completion. Progress shows skipped as a hollow dashed cell (aria-label carries the state). New "Plan" tab; tabs carry `data-tab`.
+- **A5 `Onboarding.tsx`** — `<input type=file accept=".md,.json,…">` under the paste box; reads the file, fills the box, imports.
+- `web/src/store.ts` — IndexedDB **v2**: new `reviews` store; `timer` in kv; export includes reviews; reset clears both. Upgrade from v1 is additive.
+- `web/src/i18n.ts` — 25 new strings en + ur (`// draft`, A6 still open).
+- `web/scripts/e2e-timer.py` — A2 gate (fake clock: 10 s → hide → 5 min → show → 34:50; reload → still running, log restored). `web/scripts/smoke.py` — rewritten path covers A3/A4/A5/A8 (see Verified). `verify.sh` runs both.
+- `engine/test/engine.test.ts` — 31 tests (+3: skipped semantics; weekStart/isReviewDay; retrievalQuiz rules + determinism).
+- `web/src/version.ts` — **APP_VERSION 0.2.0** (Phase A exit).
+
+Verified:
+```
+$ cd engine && ./verify.sh            # pass 31 / fail 0 · sample 0 issues · roadmap 252 units 0 errors, plans/ in sync · ALL GATES PASSED
+$ cd web && ./verify.sh
+== dist assertions  dist OK: 8 precached, entry JS 57.7 KB (limit 80 KB), lazy ai-engineer-36w 109.6 KB (limit 120 KB each), 0.2.0-fdeddd98
+== browser smoke    Today: Variables and types | Day 1 of 10 … · Persisted after reload
+                    Plan: skipped unit 3 | Day 2 of 10 (day still spent, today unchanged)
+                    Progress cells: 10 done: 1 skipped: 1 | score: 100% · Weekly review saved: Reviewed this week
+                    Urdu RTL · Offline reload OK · Roadmap offline: Set up the machine | Day 1 of 252 · 252 cells, 7 stages
+                    File import: Sample: Two-Week Python Warm-up — 10 units · SMOKE PASSED
+                    Hidden 5 min → display 34:50 · After reload → display 34:47 | log restored · TIMER E2E PASSED
+ALL GATES PASSED
+```
+
+Deployed: **0.2.0 — built by Vercel from this commit; sha256 verification recorded in the follow-up commit.**
+
+Decisions made (with reason):
+- **§4 semantics extended, not changed:** `skipped` is a fourth outcome. It advances the unit (never served again), is not a session (consistency and lapse ignore it), and — the one deliberate deviation from "any completion row dated today makes today null" — does **not** spend the day, because it is recorded from the Plan screen, possibly weeks ahead, and must not turn today's card into "Done for today". Encoded in the `skipped` test. The three original outcomes are untouched.
+- **Retrieval quiz seed = the week's Monday**, so a learner who opens the review twice in a week sees the same items; the pool can still grow later in the week as more logs cross the 7-day line (tested).
+- **Review reachable any day from Progress**, not only Fri/Sun: the Fri/Sun card is the nudge, not a gate — and the smoke pins a Monday.
+- **Skipping the current unit is allowed** (the "I already know this" case); buffers and done units are not skippable.
+- **Running timer reopens its unit on load.** Without this a reload mid-session hid a running timer on the Today card. Surfaced by the A2 gate.
+- **Deploy method (used for 0.1.1 and 0.2.0):** Vercel builds from a pinned public commit — the upload is 3 files (`package.json`, `build.sh` that clones `MrSaito/studyGroup` at the SHA and runs `npm ci && npm run build` in `keel/web`, `vercel.json` headers), Vercel installs nothing at the root and serves `out/`. Byte-exact (same SW hash as local), no hand-transcribed bundle, no Vercel login needed. Project build settings are now `buildCommand=bash build.sh`, `outputDirectory=out`; `npx vercel --prod dist` from Termux still works (static upload ignores them).
+- **Smoke vs prod cannot run from the Claude sandbox:** headless Chromium's TLS handshake is dropped by the egress proxy tunnel (curl is fine). Substitute used: sha256 of every production file equals the local `dist/` the smoke passed on. Run `KEEL_URL=<prod> python3 scripts/smoke.py` from Termux for the real thing.
+
+Deferred / partial:
+- A6 Urdu review (Saito) — now 30 draft strings. A7 Today fixes — waiting on the self-use week report.
+- `planCompleteHint` promises "Import a new plan from Settings" but Settings has no import; pre-existing copy gap, noted, not fixed (Phase A2/A7 material).
+- Blueprint §3.6 quiz is ungraded by design; no spaced-repetition scheduling of items.
+- Skip reasons are stored in `log_text` of the `skipped` row; not surfaced anywhere yet (coach input in Phase C).
+
+Exact next command:
+```
+# Phase B entry is Saito's call ("Today works"). Until then nothing to build; if he reports Today issues → A7.
+cd keel/web && ./verify.sh
+```
+
+---
+
 # HANDOVER.md — Keel, session 4 (2026-09-14) — A1 + A8: real roadmap bundled
 
 ## Session 4 — 2026-09-14 — A8 Import the real roadmap (+ A1 dedupe sample plan)
@@ -33,11 +86,7 @@ ALL GATES PASSED
 ```
 Sandbox note: `pip install playwright==1.56.0` matches the preinstalled Chromium 141; newer wheels want a browser download.
 
-Deployed: **no** — production is still 0.1.0. This sandbox has no Vercel CLI login, and the only route was the Vercel MCP file upload: 210 KB of base64 transcribed by hand through the model. A single wrong byte in `index-*.js` would replace the app Saito is using for the self-use week with a broken one, and a failed upload cannot be verified before it goes live. Not worth it unattended. To ship 0.1.1 (byte-exact, one command, from Termux):
-```
-cd keel/web && ./verify.sh && npx vercel --prod dist && KEEL_URL=https://keel-hshahfahad58-2498s-projects.vercel.app/ python3 scripts/smoke.py
-```
-or tell Claude "deploy via the Vercel MCP" and it will upload `dist/` and sha256-check every file against production before calling it done.
+Deployed: **yes, 0.1.1** (on Saito's instruction, after the session-4 handover was first written as "no"). Method: see session 5 — Vercel built it from commit `7509436` inside its own build container; every production file sha256-matched the local `dist/`. Superseded by 0.2.0 the same day.
 
 Deferred / partial:
 - The 106 validator warnings on the roadmap are **content, not parser, warnings** and are accepted as-is: days 1–4 of every week are `learn` (the variety rule fires on >2 in a row) and every day-6 build block is 420 min (the >90-min rule fires). They are the roadmap's own design ("Days 1–4 are 1-hour sessions … Day 6 is the 7-hour build block"). The test pins the count so a validator change is noticed. If Saito wants the variety rule silenced for learn+do days, that is a semantics change (§4) — not done.

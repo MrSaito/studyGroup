@@ -2,7 +2,7 @@
 // not AI-generated. Re-plan shrinks the next two weeks to half-size units.
 // Copy rule: forgiveness by default; shortest path to Start. No miss counts.
 
-import { doneUnitIds } from "./schedule.ts";
+import { advancedUnitIds } from "./schedule.ts";
 import type { Completion, Enrollment, Plan, Unit } from "./types.ts";
 
 export const RETURN_UNIT_MINUTES = 10;
@@ -30,8 +30,8 @@ export function recentlyCompleted(e: Enrollment, n = 3): Array<{ unit: Unit; com
  */
 export function buildReturnUnit(e: Enrollment, locale = "en"): Unit {
   const recent = recentlyCompleted(e, 3);
-  const done = doneUnitIds(e);
-  const current = e.plan.units.find((u) => !u.is_buffer && !done.has(u.id)) ?? e.plan.units[e.plan.units.length - 1]!;
+  const advanced = advancedUnitIds(e);
+  const current = e.plan.units.find((u) => !u.is_buffer && !advanced.has(u.id)) ?? e.plan.units[e.plan.units.length - 1]!;
   const t = STRINGS[locale] ?? STRINGS.en!;
 
   const recap = recent.length

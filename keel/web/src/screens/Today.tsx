@@ -1,8 +1,8 @@
 import { useState } from "preact/hooks";
-import { buildReturnUnit, halveNextTwoWeeks, daySpent, type LapseState, type Projection } from "@keel/engine";
+import { buildReturnUnit, halveNextTwoWeeks, daySpent, isReviewDay, weekStart, type LapseState, type Projection } from "@keel/engine";
 import type { Ctx } from "../app.tsx";
 
-function fmtDate(iso: string, locale: string): string {
+export function fmtDate(iso: string, locale: string): string {
   const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
   return new Date(y, m - 1, d).toLocaleDateString(locale === "ur" ? "ur-PK" : "en-GB", { day: "numeric", month: "short" });
 }
@@ -19,6 +19,20 @@ export function CourseLine(p: { ctx: Ctx; projection: Projection }) {
         <span>{projection.position}</span>
         {projection.projected_finish && <span>{ctx.t.finishBy} {fmtDate(projection.projected_finish, ctx.locale)}</span>}
       </div>
+    </div>
+  );
+}
+
+// Friday/Sunday nudge for the weekly review (Blueprint §3.6). Never blocks the unit card.
+function ReviewPrompt(p: { ctx: Ctx }) {
+  const { ctx } = p;
+  const due = isReviewDay(ctx.today) && !ctx.reviews.some((r) => r.week_start === weekStart(ctx.today));
+  if (!due) return null;
+  return (
+    <div class="review-card" data-review-prompt>
+      <p class="eyebrow">{ctx.t.weeklyReview} · 5 {ctx.t.min}</p>
+      <p class="muted">{ctx.t.weeklyReviewHint}</p>
+      <button class="secondary" onClick={() => ctx.go({ name: "review" })}>{ctx.t.weeklyReview}</button>
     </div>
   );
 }
@@ -79,6 +93,7 @@ export function Today(p: { ctx: Ctx; projection: Projection; lapseState: LapseSt
     const next = projection.items[0]!;
     return (
       <section class="today">
+        <ReviewPrompt ctx={ctx} />
         <p class="eyebrow">{daySpent(ctx.enrollment, ctx.today) ? t.doneForToday : t.noSessionToday}</p>
         <h2 class="unit-title">{next.unit.title}</h2>
         <p class="muted">{t.nextUp}: {fmtDate(next.date, ctx.locale)} · {next.unit.est_minutes} {t.min}</p>
@@ -90,6 +105,7 @@ export function Today(p: { ctx: Ctx; projection: Projection; lapseState: LapseSt
   if (unit.is_buffer) {
     return (
       <section class="today">
+        <ReviewPrompt ctx={ctx} />
         <p class="eyebrow">{t.today}</p>
         <h2 class="unit-title">{t.restDay}</h2>
         <p class="muted">{t.restHint}</p>
@@ -101,6 +117,7 @@ export function Today(p: { ctx: Ctx; projection: Projection; lapseState: LapseSt
 
   return (
     <section class="today">
+      <ReviewPrompt ctx={ctx} />
       <p class="eyebrow">{t.today}</p>
       <h2 class="unit-title">{unit.title}</h2>
       <p class="muted">{unit.est_minutes} {t.min}{unit.is_checkpoint ? ` · ${t.checkpoint}` : ""}</p>
