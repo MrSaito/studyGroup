@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type { Projection, Unit } from "@keel/engine";
 import { store, type TimerState } from "../store.ts";
 import type { Ctx } from "../app.tsx";
+import { track } from "../events.ts";
 
 function isUrl(s: string): boolean { return /^https?:\/\/\S+$/.test(s.trim()); }
 
@@ -28,13 +29,16 @@ export function UnitScreen(p: { ctx: Ctx; unit: Unit; mode: "plan" | "review"; p
   const [now, setNow] = useState(Date.now());
   const [saving, setSaving] = useState(false);
   const logFlush = useRef<number | null>(null);
+  const logRef = useRef("");   // latest typed value, readable synchronously by Done (state may lag a render)
 
   useEffect(() => {
     let alive = true;
     store.getTimer().then((saved) => {
       if (!alive) return;
       setNow(Date.now());
-      setTimer(saved && saved.unit_id === unit.id ? saved : { unit_id: unit.id, started_at: null, base: 0, log: "" });
+      const next = saved && saved.unit_id === unit.id ? saved : { unit_id: unit.id, started_at: null, base: 0, log: "" };
+      logRef.current = next.log;
+      setTimer(next);
     }).catch(() => setTimer({ unit_id: unit.id, started_at: null, base: 0, log: "" }));
     return () => { alive = false; };
   }, [unit.id]);
@@ -66,6 +70,7 @@ export function UnitScreen(p: { ctx: Ctx; unit: Unit; mode: "plan" | "review"; p
   const onLog = (value: string) => {
     if (!timer) return;
     const next = { ...timer, log: value };
+    logRef.current = value;
     setTimer(next);
     if (logFlush.current != null) clearTimeout(logFlush.current);
     logFlush.current = window.setTimeout(() => { store.putTimer(next).catch(() => {}); }, 300);
@@ -85,8 +90,9 @@ export function UnitScreen(p: { ctx: Ctx; unit: Unit; mode: "plan" | "review"; p
     const minutes = Math.max(1, Math.round(elapsed / 60));
     // Review mode = a swapped_review against the *current* plan unit (the return unit borrows its seq).
     const target = mode === "review" ? p.projection.items[0]?.unit ?? unit : unit;
-    const log = timer?.log.trim() || undefined;
+    const log = logRef.current.trim() || undefined;
     await ctx.complete({ unit_id: target.id, date: ctx.today, outcome: mode === "review" ? "swapped_review" : "done", minutes, log_text: log });
+    if (mode === "review") track("return_done", { unit_id: target.id, minutes });
     await store.clearTimer().catch(() => {});
     ctx.go({ name: "today" });
   };

@@ -112,5 +112,35 @@ const t: Partial<Strings> = {
   restoreFail: "یہ فائل Keel بیک اپ نہیں ہے۔", // draft
   restored: "بیک اپ بحال ہو گیا۔", // draft
   translationDraft: "یہ ترجمہ ابھی مسودہ ہے۔ جو غلط لگے ہمیں بتائیں۔", // draft
+  backupSync: "بیک اپ اور ہم آہنگی", // draft
+  syncSoon: "سائن اِن اور آلات کے درمیان ہم آہنگی اگلی ریلیز میں آ رہی ہے۔", // draft
+  syncHint: "اختیاری۔ اپنا منصوبہ اور تاریخ محفوظ رکھنے اور دوسرے فون پر Keel استعمال کرنے کے لیے سائن اِن کریں۔ جب تک آپ نہ کریں کچھ بھی اس آلے سے باہر نہیں جاتا۔", // draft
+  email: "ای میل", // draft
+  sendCode: "مجھے کوڈ بھیجیں", // draft
+  codeLabel: "ای میل سے 6 ہندسوں کا کوڈ", // draft
+  verify: "تصدیق کریں", // draft
+  signInFail: "کوڈ نہیں بھیجا جا سکا:", // draft
+  codeFail: "یہ کوڈ کام نہیں کیا۔ ای میل دیکھ کر دوبارہ کوشش کریں۔", // draft
+  offlineHint: "ابھی کنکشن نہیں۔ آن لائن ہونے پر دوبارہ کوشش کریں۔", // draft
+  lastSynced: "آخری ہم آہنگی", // draft
+  syncing: "ہم آہنگ ہو رہا ہے…", // draft
+  syncOffline: "آف لائن — واپسی پر تبدیلیاں ہم آہنگ ہوں گی۔", // draft
+  syncError: "ہم آہنگی میں مسئلہ آیا؛ دوبارہ کوشش ہوگی۔", // draft
+  syncReauth: "ہم آہنگی جاری رکھنے کے لیے دوبارہ سائن اِن کریں۔ کچھ ضائع نہیں ہوا۔", // draft
+  syncNow: "ابھی ہم آہنگ کریں", // draft
+  signOut: "سائن آؤٹ", // draft
+  signOutKeep: "سائن آؤٹ ہو گیا۔ آپ کا منصوبہ اس آلے پر رہے گا۔", // draft
+  haveAccount: "میں پہلے ہی دوسرے فون پر Keel استعمال کرتا ہوں", // draft
+  reminders: "یاد دہانیاں", // draft
+  remindersHint: "آپ کے اشارے کے وقت ایک یاد دہانی، 90 منٹ بعد دوسری 10 منٹ کے آپشن کے ساتھ۔ دو سے زیادہ کبھی نہیں۔ خاموش اوقات کا احترام۔", // draft
+  remindAt: "مجھے یاد دلائیں", // draft
+  quietFrom: "خاموشی", // draft
+  quietTo: "تک", // draft
+  remindersOn: "یاد دہانیاں آن کریں", // draft
+  remindersOff: "یاد دہانیاں بند کریں", // draft
+  pushDenied: "براؤزر کی ترتیبات میں Keel کی اطلاعات بند ہیں۔", // draft
+  pushUnsupported: "یاد دہانیوں کے لیے Keel کو ہوم اسکرین پر انسٹال کریں (Add to Home Screen، پھر دوبارہ کھولیں)۔", // draft
+  deleteAccount: "میرا اکاؤنٹ حذف کریں", // draft
+  deleteAccountConfirm: "یہ آپ کا اکاؤنٹ اور اس سے ہم آہنگ سب کچھ حذف کر دے گا۔ مقامی کاپی بھی حذف ہوگی۔ جاری رکھیں؟", // draft
 };
 export default t;

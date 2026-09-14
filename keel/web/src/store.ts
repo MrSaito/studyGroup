@@ -5,11 +5,24 @@ import type { Availability, Completion, Plan } from "@keel/engine";
 
 export interface Intention { after: string; place: string }
 export interface EnrollmentRecord {
+  /** Client uuid; the sync key. Older local records get one on first load. */
+  id?: string;
   plan: Plan;
   started_at: string;
   availability: Availability;
   intention: Intention;
   why: string;
+  /** ISO timestamp; last-write-wins across devices. */
+  updated_at?: string;
+}
+export interface EventRow { id: string; name: string; props: Record<string, string | number | boolean>; at: string }
+/** Sync bookkeeping (B4): which local rows the server has acknowledged, and the pull cursor. */
+export interface SyncState {
+  pushed_completions: string[];
+  pushed_reviews: string[];
+  pulled_completions_at: string | null;
+  pulled_reviews_at: string | null;
+  last_sync_at: string | null;
 }
 export interface CompletionRow extends Completion {
   id: string;           // client-generated, for idempotent sync later
@@ -35,7 +48,7 @@ export interface TimerState {
   log: string;
 }
 
-const DB = "keel", VERSION = 2;
+const DB = "keel", VERSION = 3;
 
 function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -45,6 +58,7 @@ function open(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
       if (!db.objectStoreNames.contains("completions")) db.createObjectStore("completions", { keyPath: "id" });
       if (!db.objectStoreNames.contains("reviews")) db.createObjectStore("reviews", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("events")) db.createObjectStore("events", { keyPath: "id" });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -82,6 +96,30 @@ export const store = {
     const row: ReviewRow = { ...r, id: crypto.randomUUID(), created_at: new Date().toISOString() };
     return tx("reviews", "readwrite", (s) => s.add(row)).then(() => row);
   },
+  /** Insert a row that came from the server; a no-op if the id already exists locally. */
+  putCompletionIfAbsent: async (row: CompletionRow): Promise<boolean> => {
+    const existing = await tx<CompletionRow | undefined>("completions", "readonly", (s) => s.get(row.id));
+    if (existing) return false;
+    await tx("completions", "readwrite", (s) => s.put(row));
+    return true;
+  },
+  putReviewIfAbsent: async (row: ReviewRow): Promise<boolean> => {
+    const existing = await tx<ReviewRow | undefined>("reviews", "readonly", (s) => s.get(row.id));
+    if (existing) return false;
+    await tx("reviews", "readwrite", (s) => s.put(row));
+    return true;
+  },
+  // ---- Phase B: session, sync state, event queue ----
+  getSession: () => tx<import("./auth.ts").Session | undefined>("kv", "readonly", (s) => s.get("session")),
+  putSession: (v: import("./auth.ts").Session) => tx("kv", "readwrite", (s) => s.put(v, "session")),
+  clearSession: () => tx("kv", "readwrite", (s) => s.delete("session")),
+  getSyncState: async (): Promise<SyncState> => (await tx<SyncState | undefined>("kv", "readonly", (s) => s.get("sync")))
+    ?? { pushed_completions: [], pushed_reviews: [], pulled_completions_at: null, pulled_reviews_at: null, last_sync_at: null },
+  putSyncState: (v: SyncState) => tx("kv", "readwrite", (s) => s.put(v, "sync")),
+  clearSyncState: () => tx("kv", "readwrite", (s) => s.delete("sync")),
+  enqueueEvent: (e: EventRow) => tx("events", "readwrite", (s) => s.put(e)),
+  listEvents: () => tx<EventRow[]>("events", "readonly", (s) => s.getAll()),
+  deleteEvents: async (ids: string[]) => { for (const id of ids) await tx("events", "readwrite", (s) => s.delete(id)); },
   getTimer: () => tx<TimerState | undefined>("kv", "readonly", (s) => s.get("timer")),
   putTimer: (t: TimerState) => tx("kv", "readwrite", (s) => s.put(t, "timer")),
   clearTimer: () => tx("kv", "readwrite", (s) => s.delete("timer")),
@@ -92,10 +130,11 @@ export const store = {
     for (const c of d.completions) await tx("completions", "readwrite", (s) => s.put(c));
     for (const r of d.reviews) await tx("reviews", "readwrite", (s) => s.put(r));
   },
-  /** Full wipe. Used by "Delete plan and history" and archive. */
+  /** Full wipe of plan data. Used by "Delete plan and history", "Start a new plan", restore and archive. The session survives. */
   reset: async () => {
     await tx("kv", "readwrite", (s) => s.delete("enrollment"));
     await tx("kv", "readwrite", (s) => s.delete("timer"));
+    await tx("kv", "readwrite", (s) => s.delete("sync"));
     await tx("completions", "readwrite", (s) => s.clear());
     await tx("reviews", "readwrite", (s) => s.clear());
   },

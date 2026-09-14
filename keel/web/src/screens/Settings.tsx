@@ -4,6 +4,7 @@ import { store, type CompletionRow, type EnrollmentRecord, type ReviewRow } from
 import { APP_VERSION } from "../version.ts";
 import { DAY_LABELS, LOCALES, isLocale, type Locale } from "../i18n.ts";
 import type { Ctx } from "../app.tsx";
+import { useLazy } from "../lazy.tsx";
 
 /** Shape check for a Keel export file before it replaces local data. Throws on anything off. */
 export function parseBackup(text: string): { enrollment: EnrollmentRecord; completions: CompletionRow[]; reviews: ReviewRow[] } {
@@ -28,6 +29,7 @@ export function parseBackup(text: string): { enrollment: EnrollmentRecord; compl
 export function SettingsScreen(p: { ctx: Ctx }) {
   const { ctx } = p;
   const { t } = ctx;
+  const Account = useLazy<{ ctx: Ctx }>(() => import("./Account.tsx").then((m) => m.AccountSection));
   const [days, setDays] = useState<Weekday[]>(ctx.rec.availability.days);
   const [minutes, setMinutes] = useState(ctx.rec.availability.minutes_per_day);
   const [after, setAfter] = useState(ctx.rec.intention.after);
@@ -85,6 +87,8 @@ export function SettingsScreen(p: { ctx: Ctx }) {
       <input placeholder={t.intentionPlace} value={place} onInput={(e) => setPlace((e.target as HTMLInputElement).value)} />
       <button class="primary" data-action="save" disabled={!dirty || days.length === 0} onClick={save}>{t.saveChanges}</button>
       {note && <p class="notice" role="status">{note}</p>}
+
+      {Account && <Account ctx={ctx} />}
 
       <h3>{t.exportData}</h3>
       <button class="secondary" onClick={exportData}>{t.exportData}</button>

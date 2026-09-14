@@ -3,6 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 echo "== engine"; (cd ../engine && ./verify.sh | tail -1)
+echo "== backend (schema on pglite, nudge scheduler)"; (cd ../supabase && [ -d node_modules ] || npm ci --silent; node test/schema.test.mjs | tail -1; node --test functions/nudge/schedule.test.ts 2>&1 | grep -E "^# (pass|fail)" | tr '\n' ' '; echo)
 [ -d node_modules ] || npm ci --silent
 echo "== typecheck"; npx tsc --noEmit
 echo "== i18n"; node scripts/check-i18n.ts
@@ -13,6 +14,7 @@ echo "== browser smoke (headless Chromium via Playwright; skipped if unavailable
 if python3 -c "import playwright" 2>/dev/null; then
   python3 scripts/smoke.py
   python3 scripts/e2e-timer.py
+  python3 scripts/e2e-sync.py
 else
   echo "   playwright not installed — skipped"
 fi

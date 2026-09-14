@@ -1,3 +1,58 @@
+# HANDOVER.md — Keel, session 7 (2026-09-14) — Phase B built and gated locally; B1 blocked on billing
+
+## Session 7 — 2026-09-14 — "Go B": B1 blocked, B2–B7 built, every gate that can run without a live project is green
+**Blocker (needs Saito):** `create_project` in org "Abdul's Den" (the only org; Pro plan, new project = **$10/month**, inside the $20 ceiling) was refused: *"There are overdue invoices in the organization. Settle the invoices before creating a new project."* Two ways out: settle the invoices, or create a new free-tier org in the Supabase dashboard and tell me its name. Region will be ap-south-1 (Mumbai). Nothing below touches a live project until then.
+
+Built (all gated locally):
+- **B2 schema — `supabase/migrations/0001_core.sql`.** Plain Postgres: users (mirror of auth.users via trigger; tz, locale), enrollments (LWW on updated_at), completions + reviews + events (append-only: no UPDATE/DELETE policy *and* grants revoked), push_subscriptions, notification_prefs, nudges (service role only). RLS on all 8 tables, `user_id = auth.uid()`. `supabase/verify.sql` is the gate query (run via execute_sql on the live project too). **Local gate:** `supabase/test/schema.test.mjs` applies the migration to **pglite (WASM Postgres 18)** with a 6-line shim for what Supabase provides, then asserts: RLS + exact policy counts on every table; UPDATE/DELETE on append-only tables → permission denied; A cannot insert a row owned by B; **B reads zero of A's rows across enrollments/completions/users**; B's UPDATE of A's row affects 0 rows; deleting the auth user cascades to 0 rows; all four metrics views return rows on seeded events. 21/21 assertions.
+- **B3 auth — `web/src/auth.ts`.** GoTrue over `fetch`, no SDK (decision below): email OTP request/verify, refresh with the expired-token rule from SECURITY-BASELINE (queue kept, "Sign in again" shown), sign-out. Phone OTP functions exist but the UI offers email only until an SMS provider is configured in the project (B3 note). Sign-in lives in Settings ("Back up and sync", optional, never forced) and in onboarding ("I already use Keel on another phone") so a second device pulls its plan instead of creating a new one.
+- **B4 sync — `web/src/sync.ts`.** completions/reviews: push rows the server lacks (ids tracked in `kv.sync`, `Prefer: resolution=ignore-duplicates` for idempotency), pull rows the client lacks (inclusive created_at cursor, dedup by id), union. Enrollment: one active per user, LWW on updated_at; a different newer remote row is adopted, a different older one is archived. Events: push and forget. Triggers: app open, sign-in, visibilitychange, `online`, and 1.5 s after every write. Retries back off 2 s → 5 min. Never blocks the UI; status shown in Settings. `EnrollmentRecord` gained `id` + `updated_at` (older local records get them on first load). IndexedDB **v3** (events store).
+- **B4 gate — `web/scripts/e2e-sync.py`** against **`web/scripts/fake-supabase.py`**, an in-memory stand-in for the exact GoTrue/PostgREST endpoints the client uses, scoped per bearer like RLS: A onboards, signs in, completes a unit → on server; B (fresh device) signs in from onboarding → gets A's plan and history; B goes **offline**, skips a unit → status "offline", server unchanged; B online → queue drains; A reloads and sees B's skip; C (another user) sees nothing of A's; A deletes the account → zero server rows, local wiped.
+- **B5 push.** Client `web/src/push.ts` (opt-in from Settings after the value line; subscribes; posts subscription + prefs); SW gets `push` and `notificationclick` handlers (opens `./?from=push` → `notification_opened` event). Server: `supabase/functions/nudge/` — `schedule.ts` is the **pure decision** (send-time window, +90 min second nudge with the 10-minute option, max two/day, quiet hours wrapping midnight, lapse-tier copy, never "overdue"/miss counts) with **6 node:test cases on a fixed clock**; `index.ts` (Deno) computes local time per user from `tz`, reuses the engine's `project()/daySpent()/lapse()` (copied by `functions/deploy.sh`), sends via `npm:web-push`, logs to `nudges`, drops 404/410 subscriptions. `migrations/0002_secrets_cron.sql`: `get_secret()` (service role only, reads Vault), pg_cron every 15 min → pg_net → the function with a shared secret header. Adaptive timing (B5b) not started.
+- **B6 metrics — `supabase/metrics.sql`.** Views: north star (learners with ≥3 unit_done per week), D1/D7/D30/D90 retention, lapse-recovery rate, notification→start within 60 min. Client `web/src/events.ts` queues the §8 event names (+ `unit_skipped`, `review_saved`, `signed_in`); revoked from anon/authenticated.
+- **B7 — `supabase/functions/delete-account/`** (verify_jwt: caller's JWT → admin delete of the auth user → every table cascades). Settings: "Delete my account" (confirm → function → sign out → local wipe).
+- Bundle: backend code + account UI are **lazy chunks** (entry 68.8 KB of 80). `web/src/config.ts` holds `__SUPABASE_URL__` / `__SUPABASE_ANON_KEY__` / `__VAPID_PUBLIC_KEY__` placeholders; until filled, Settings shows "coming in the next release" and nothing network-related runs. A loopback-only override lets the e2e point at the fake backend.
+- Bugs found by the new gates: (1) pull cursor used `>`; two rows in the same millisecond (or a pinned clock) were skipped — now `>=` + id dedup; (2) typing a log and tapping Done in the same instant could save without the log (state lagged a render) — now read through a ref. Both would have hit real users.
+- 30 new strings × 6 locales (drafts). `web/verify.sh` now runs the schema test, the scheduler tests and the sync e2e. **APP_VERSION 0.2.2** (fixes above; backend still off in prod).
+
+Verified:
+```
+$ cd engine && ./verify.sh          # pass 32 / fail 0 · ALL GATES PASSED
+$ cd supabase && npm test           # SCHEMA TESTS PASSED (21/21 on pglite) · nudge scheduler: pass 6 / fail 0
+$ cd web && ./verify.sh
+== dist assertions  entry JS 68.9 KB (limit 80 KB), lazy Account 4.3 · backend 9.5 · ai-engineer-36w 109.6 · locales 5.3–8.7 KB
+== browser smoke    SMOKE PASSED (all session-6 paths)    · TIMER E2E PASSED
+== sync e2e         A signed in → server; B pulled plan+history; B offline skip queued; B online drained; A sees it; C isolated; A deleted → 0 rows
+                    SYNC E2E PASSED (3 consecutive runs)
+ALL GATES PASSED
+```
+
+Deployed: **0.2.2 — built by Vercel from this commit; sha256 verification recorded in the follow-up commit.** Backend placeholders unfilled, so production shows "coming in the next release" under Settings → Back up and sync and makes no network calls.
+
+Decisions made (with reason):
+- **No Supabase SDK.** supabase-js is ~30 KB gzipped against a 80 KB entry budget; the client needs five auth endpoints and PostgREST CRUD. `fetch` it is (CLAUDE.md B4 asked for exactly this call). Licence line: no new runtime dependency; **dev-only**: `@electric-sql/pglite` (Apache-2.0) in `supabase/`, and `npm:web-push` (MIT) inside the Edge Function only.
+- **Schema proven on vanilla Postgres before any project exists** (pglite) — this is the "Plain-Postgres-first" rule made testable; the same `verify.sql` runs on the live project afterwards.
+- **Fake backend for the e2e, real backend for a Node check later.** Headless Chromium cannot reach Supabase from this sandbox (proxy), and a real two-device test needs a mailbox for OTP. The fake enforces the same per-user boundary; the RLS itself is proven by the pglite test and will be re-run live.
+- **Secrets never in the repo.** VAPID keys + cron secret go into Vault at deploy time by hand (steps below); `config.ts` carries only public values.
+- **Timezone from the device** (`Intl` resolved tz) pushed to `users.tz` at sign-in/locale change; the nudge function trusts it.
+
+Exact next commands (when the project exists — in this order):
+```
+1. create_project (name keel, ap-south-1) → record ref + URL here, never keys.
+2. apply_migration 0001_core (from supabase/migrations/0001_core.sql); execute_sql supabase/verify.sql → every row ok=true;
+   execute_sql: create two test users (SQL insert into auth.users/identities), run the same cross-user checks as test/schema.test.mjs.
+3. execute_sql supabase/metrics.sql.
+4. Vault: generate VAPID keys (node: crypto ECDH P-256 → base64url) → vault.create_secret ×3 (vapid_private_key, vapid_public_key, nudge_cron_secret).
+   apply_migration 0002_secrets_cron with __PROJECT_REF__ substituted.
+5. cd supabase/functions && ./deploy.sh; deploy_edge_function nudge (verify_jwt=false, files: index.ts, schedule.ts, engine/*.ts) and delete-account (verify_jwt=true).
+   Call nudge with ?dry=1 and the secret → JSON with considered/results.
+6. web/src/config.ts: url, anon key (get_publishable_keys), VAPID public key. public/vercel.json connect-src += the project origin.
+7. Auth settings in the dashboard: enable email OTP (default), set OTP length 6, site URL = the Vercel URL; phone provider optional.
+8. ./verify.sh, APP_VERSION 0.3.0, commit, deploy, sha256 check, sign in on the Pixel, enable reminders, log the first push receipt here (B5 gate).
+```
+
+---
+
 # HANDOVER.md — Keel, session 6 (2026-09-14) — languages ×4, multi-unit days, details, convenience — 0.2.1
 
 ## Session 6 — 2026-09-14 — Saito's ask: zh/ar/ru/es, several units a day, see past & upcoming units, "features that sell"

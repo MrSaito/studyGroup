@@ -30,6 +30,19 @@ self.addEventListener("activate", (e) => {
 });
 // Same-origin GET only. App shell is cache-first (immutable, hashed by Vite).
 // Cross-origin (future API) is never cached here — sync layer owns that.
+// Web Push (B5). Payload: { title, body, url }. Tapping opens/focuses the app with ?from=push so the client can log notification_opened.
+self.addEventListener("push", (e) => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch {}
+  e.waitUntil(self.registration.showNotification(d.title || "Keel", { body: d.body || "", icon: "./icon-192.png", badge: "./icon-192.png", tag: d.tag || "keel-nudge", renotify: false, data: { url: d.url || "./?from=push" } }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "./?from=push", self.location.href).href;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((cs) => {
+    const c = cs.find((w) => "focus" in w);
+    return c ? c.focus().then((w) => w.navigate ? w.navigate(url) : w) : self.clients.openWindow(url);
+  }));
+});
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== self.location.origin) return;

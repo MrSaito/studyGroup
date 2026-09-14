@@ -112,5 +112,35 @@ const t: Partial<Strings> = {
   restoreFail: "Ese archivo no es una copia de seguridad de Keel.", // draft
   restored: "Copia restaurada.", // draft
   translationDraft: "Esta traducción es un borrador. Dinos qué suena mal.", // draft
+  backupSync: "Copia de seguridad y sincronización", // draft
+  syncSoon: "El inicio de sesión y la sincronización entre dispositivos llegan en la próxima versión.", // draft
+  syncHint: "Opcional. Inicia sesión para guardar tu plan e historial y usar Keel en otro teléfono. Nada sale de este dispositivo hasta que lo hagas.", // draft
+  email: "Correo", // draft
+  sendCode: "Enviarme un código", // draft
+  codeLabel: "El código de 6 dígitos del correo", // draft
+  verify: "Verificar", // draft
+  signInFail: "No se pudo enviar el código:", // draft
+  codeFail: "Ese código no funcionó. Revisa el correo e inténtalo de nuevo.", // draft
+  offlineHint: "Sin conexión ahora mismo. Inténtalo cuando estés en línea.", // draft
+  lastSynced: "Última sincronización", // draft
+  syncing: "Sincronizando…", // draft
+  syncOffline: "Sin conexión: los cambios se sincronizarán cuando vuelvas.", // draft
+  syncError: "La sincronización tuvo un problema; se reintentará.", // draft
+  syncReauth: "Inicia sesión de nuevo para seguir sincronizando. No se ha perdido nada.", // draft
+  syncNow: "Sincronizar ahora", // draft
+  signOut: "Cerrar sesión", // draft
+  signOutKeep: "Sesión cerrada. Tu plan se queda en este dispositivo.", // draft
+  haveAccount: "Ya uso Keel en otro teléfono", // draft
+  reminders: "Recordatorios", // draft
+  remindersHint: "Un recordatorio a la hora de tu señal y otro 90 minutos después con una opción de 10 minutos. Nunca más de dos. Se respetan las horas de silencio.", // draft
+  remindAt: "Recordarme a las", // draft
+  quietFrom: "Silencio desde", // draft
+  quietTo: "hasta", // draft
+  remindersOn: "Activar recordatorios", // draft
+  remindersOff: "Desactivar recordatorios", // draft
+  pushDenied: "Las notificaciones de Keel están bloqueadas en los ajustes del navegador.", // draft
+  pushUnsupported: "Los recordatorios necesitan Keel instalado en la pantalla de inicio (Añadir a pantalla de inicio y volver a abrir).", // draft
+  deleteAccount: "Eliminar mi cuenta", // draft
+  deleteAccountConfirm: "Esto elimina tu cuenta y todo lo sincronizado con ella. La copia local también se elimina. ¿Continuar?", // draft
 };
 export default t;

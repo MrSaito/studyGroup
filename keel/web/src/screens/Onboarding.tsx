@@ -3,6 +3,7 @@ import { importMarkdown, assertPlan, validatePlan, type Plan, type Weekday } fro
 import type { EnrollmentRecord } from "../store.ts";
 import { DAY_LABELS, LOCALES, isLocale, type Locale, type Strings } from "../i18n.ts";
 import { TEMPLATES, type Template } from "../templates.ts";
+import { useLazy } from "../lazy.tsx";
 
 function parsePlan(text: string): Plan {
   const s = text.trim();
@@ -10,7 +11,7 @@ function parsePlan(text: string): Plan {
   return importMarkdown(s);
 }
 
-export function Onboarding(p: { t: Strings; locale: Locale; setLocale: (l: Locale) => void; today: string; onDone: (r: EnrollmentRecord) => void; error: string | null }) {
+export function Onboarding(p: { t: Strings; locale: Locale; setLocale: (l: Locale) => void; today: string; onDone: (r: EnrollmentRecord) => void; error: string | null; signIn?: () => Promise<void> }) {
   const { t } = p;
   const [step, setStep] = useState(0);
   const [why, setWhy] = useState("");
@@ -22,6 +23,8 @@ export function Onboarding(p: { t: Strings; locale: Locale; setLocale: (l: Local
   const [after, setAfter] = useState("");
   const [place, setPlace] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const SignIn = useLazy<{ t: Strings; onSignedIn: () => Promise<void>; compact?: boolean }>(() => import("./Account.tsx").then((m) => m.SignIn));
 
   // Pasted plans show their validation notes (capped: a long plan can carry a
   // hundred). Bundled templates are curated; their notes are accepted in
@@ -62,6 +65,8 @@ export function Onboarding(p: { t: Strings; locale: Locale; setLocale: (l: Local
         <p class="muted">{t.onboardGoalHint}</p>
         <textarea rows={3} value={why} onInput={(e) => setWhy((e.target as HTMLTextAreaElement).value)} />
         <button class="primary" disabled={why.trim().length < 3} onClick={() => setStep(1)}>{t.nextUp}</button>
+        {p.signIn && !showSignIn && <button class="link" data-action="have-account" onClick={() => setShowSignIn(true)}>{t.haveAccount}</button>}
+        {p.signIn && showSignIn && SignIn && <SignIn t={t} onSignedIn={p.signIn} />}
       </section>}
 
       {step === 1 && <section>

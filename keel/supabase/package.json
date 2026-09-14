@@ -1,0 +1,10 @@
+{
+  "name": "@keel/supabase",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Keel backend: plain-Postgres migrations, RLS verification, Edge Functions. Tests run on pglite (WASM Postgres) so the schema is proven before it touches a project.",
+  "scripts": { "test": "node test/schema.test.mjs && node --test functions/nudge/schedule.test.ts" },
+  "devDependencies": { "@electric-sql/pglite": "^0.5.8" }
+}

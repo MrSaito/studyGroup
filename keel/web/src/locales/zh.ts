@@ -112,5 +112,35 @@ const t: Partial<Strings> = {
   restoreFail: "该文件不是 Keel 备份。", // draft
   restored: "备份已恢复。", // draft
   translationDraft: "此翻译为草稿。哪里不通顺请告诉我们。", // draft
+  backupSync: "备份与同步", // draft
+  syncSoon: "登录和跨设备同步将在下一个版本推出。", // draft
+  syncHint: "可选。登录以保存计划和记录，并在另一部手机上使用 Keel。在你登录之前，任何数据都不会离开此设备。", // draft
+  email: "邮箱", // draft
+  sendCode: "发送验证码", // draft
+  codeLabel: "邮件中的 6 位验证码", // draft
+  verify: "验证", // draft
+  signInFail: "无法发送验证码：", // draft
+  codeFail: "验证码无效。请检查邮件后重试。", // draft
+  offlineHint: "当前没有网络。联网后再试。", // draft
+  lastSynced: "上次同步", // draft
+  syncing: "同步中…", // draft
+  syncOffline: "离线——恢复联网后会同步更改。", // draft
+  syncError: "同步遇到问题，将会重试。", // draft
+  syncReauth: "请重新登录以继续同步。数据不会丢失。", // draft
+  syncNow: "立即同步", // draft
+  signOut: "退出登录", // draft
+  signOutKeep: "已退出。你的计划仍保留在此设备上。", // draft
+  haveAccount: "我已在另一部手机上使用 Keel", // draft
+  reminders: "提醒", // draft
+  remindersHint: "在你的提示时间发送一次提醒，90 分钟后再发一次并提供 10 分钟选项。绝不超过两次。遵守免打扰时段。", // draft
+  remindAt: "提醒时间", // draft
+  quietFrom: "免打扰从", // draft
+  quietTo: "到", // draft
+  remindersOn: "开启提醒", // draft
+  remindersOff: "关闭提醒", // draft
+  pushDenied: "浏览器设置中已阻止 Keel 的通知。", // draft
+  pushUnsupported: "提醒需要将 Keel 安装到主屏幕（添加到主屏幕后重新打开）。", // draft
+  deleteAccount: "删除我的账户", // draft
+  deleteAccountConfirm: "这将删除你的账户及所有已同步的数据。本地副本也会被删除。继续？", // draft
 };
 export default t;

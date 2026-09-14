@@ -112,5 +112,35 @@ const t: Partial<Strings> = {
   restoreFail: "هذا الملف ليس نسخة احتياطية من Keel.", // draft
   restored: "تمت استعادة النسخة الاحتياطية.", // draft
   translationDraft: "هذه الترجمة مسودة. أخبرنا بما يبدو خاطئاً.", // draft
+  backupSync: "النسخ الاحتياطي والمزامنة", // draft
+  syncSoon: "تسجيل الدخول والمزامنة بين الأجهزة قادمان في الإصدار التالي.", // draft
+  syncHint: "اختياري. سجّل الدخول لحفظ خطتك وسجلّك واستخدام Keel على هاتف آخر. لا يغادر شيء هذا الجهاز حتى تفعل.", // draft
+  email: "البريد الإلكتروني", // draft
+  sendCode: "أرسل لي رمزاً", // draft
+  codeLabel: "الرمز المكوّن من 6 أرقام من البريد", // draft
+  verify: "تحقق", // draft
+  signInFail: "تعذّر إرسال الرمز:", // draft
+  codeFail: "هذا الرمز لم ينجح. تحقق من البريد وحاول مجدداً.", // draft
+  offlineHint: "لا اتصال الآن. حاول مجدداً عندما تكون متصلاً.", // draft
+  lastSynced: "آخر مزامنة", // draft
+  syncing: "جارٍ المزامنة…", // draft
+  syncOffline: "غير متصل — ستتم مزامنة التغييرات عند عودتك.", // draft
+  syncError: "واجهت المزامنة مشكلة؛ ستعيد المحاولة.", // draft
+  syncReauth: "سجّل الدخول مجدداً لمتابعة المزامنة. لم يُفقد شيء.", // draft
+  syncNow: "زامن الآن", // draft
+  signOut: "تسجيل الخروج", // draft
+  signOutKeep: "تم تسجيل الخروج. تبقى خطتك على هذا الجهاز.", // draft
+  haveAccount: "أستخدم Keel بالفعل على هاتف آخر", // draft
+  reminders: "التذكيرات", // draft
+  remindersHint: "تذكير واحد في وقت إشارتك، وثانٍ بعد 90 دقيقة مع خيار 10 دقائق. لا أكثر من اثنين أبداً. مع احترام ساعات الهدوء.", // draft
+  remindAt: "ذكّرني في", // draft
+  quietFrom: "هدوء من", // draft
+  quietTo: "حتى", // draft
+  remindersOn: "تفعيل التذكيرات", // draft
+  remindersOff: "إيقاف التذكيرات", // draft
+  pushDenied: "الإشعارات محظورة لـ Keel في إعدادات المتصفح.", // draft
+  pushUnsupported: "تحتاج التذكيرات إلى تثبيت Keel على الشاشة الرئيسية (أضف إلى الشاشة الرئيسية ثم أعد الفتح).", // draft
+  deleteAccount: "احذف حسابي", // draft
+  deleteAccountConfirm: "سيحذف هذا حسابك وكل ما تمت مزامنته معه. وتُحذف نسختك المحلية أيضاً. متابعة؟", // draft
 };
 export default t;
