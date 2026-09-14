@@ -27,7 +27,7 @@ $ cd web && ./verify.sh
 ALL GATES PASSED
 ```
 
-Deployed: **0.2.2 — built by Vercel from this commit; sha256 verification recorded in the follow-up commit.** Backend placeholders unfilled, so production shows "coming in the next release" under Settings → Back up and sync and makes no network calls.
+Deployed: **yes — 0.2.2 live** at https://keel-hshahfahad58-2498s-projects.vercel.app/ (deployment `dpl_6xsfFkDxjp5Te5SEUSmrqQMSPypc`, built by Vercel from commit `b520a2a`). All 16 production files sha256-equal to the gated local `dist/`; `SW_VERSION = "0.2.2-2781ab68"`. Backend placeholders unfilled, so production shows "coming in the next release" under Settings → Back up and sync and makes no network calls; the lazy backend chunk is precached but never executed. (GitHub returned 503 on four consecutive pushes this session; the fifth succeeded — nothing to do, noting it for the record.)
 
 Decisions made (with reason):
 - **No Supabase SDK.** supabase-js is ~30 KB gzipped against a 80 KB entry budget; the client needs five auth endpoints and PostgREST CRUD. `fetch` it is (CLAUDE.md B4 asked for exactly this call). Licence line: no new runtime dependency; **dev-only**: `@electric-sql/pglite` (Apache-2.0) in `supabase/`, and `npm:web-push` (MIT) inside the Edge Function only.
