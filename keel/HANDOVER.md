@@ -14,7 +14,7 @@ Done on the live project, in order, each verified:
 8. Full web gate with the real config: ALL GATES PASSED (schema on pglite, scheduler tests, smoke, timer e2e, sync e2e). Entry JS 69.2 KB. `verify.mjs` secret scan narrowed to real secret shapes (the public URL/key are allowed; JWTs, `sb_secret_`, service_role, private keys are not).
 9. **APP_VERSION 0.3.0** (Phase B exit marker).
 
-Deployed: **0.3.0 — built by Vercel from this commit; sha256 verification recorded in the follow-up commit.**
+Deployed: **yes — 0.3.0 live** at https://keel-hshahfahad58-2498s-projects.vercel.app/ (deployment `dpl_7G5PxerqyVLaoHtEkAPKaJ4BxLTU`, built by Vercel from commit `4c49f99`). All 16 production files sha256-equal to the gated local `dist/`; `SW_VERSION = "0.3.0-ae62df07"`; CSP `connect-src 'self' https://qwrbevhxtflmwkmueqmw.supabase.co` served. The app now talks to the live project: Settings → Back up and sync shows the email sign-in.
 
 **Saito — three things only you can do (dashboard, ~5 minutes):**
 - Auth → URL Configuration → **Site URL** = `https://keel-hshahfahad58-2498s-projects.vercel.app` and add it to **Redirect URLs**. Until then the magic link in the sign-in email lands on `localhost:3000` and sign-in fails. (The Management API for this needs a personal access token the MCP does not have.)
