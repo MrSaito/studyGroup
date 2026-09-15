@@ -25,7 +25,7 @@ re-plan offer (7 days), or a restart/archive prompt (21 days). Never shows
 "overdue", never shows a count of missed days, never uses red. Everything
 else in the blueprint is secondary to that loop.
 
-## 2. Current state (2026-09-14, session 8)
+## 2. Current state (2026-09-15, session 9)
 
 | Layer | State | Proof |
 |---|---|---|
@@ -40,9 +40,11 @@ Vercel: team `team_mWaqmzPV6yZRTpvMh8r1crHt`, project `keel`
 (`prj_5KF4pViYakmDR5pYLOlR82Vg7fVO`), hobby plan, deployment protection =
 preview-only (production public). No custom domain yet.
 
-**The next thing that happens is not code.** Blueprint §12.2: Saito uses the
-live app for a week. Until he reports back, do not start Phase B. If he
-reports "Today doesn't pull me in", Phase A2 (Today fixes) comes first.
+**The next thing that happens is not code.** Phase B is live; the cohort
+kit is in `cohort/` (invite copy, install guide + published page, week-8
+metrics SQL). Saito sets the Supabase Site URL, sends the invite, records
+the cohort start date. Phase C is blocked until the week-8 numbers are in
+(`cohort/METRICS.md`). Build only what feedback or A6/A7 asks for.
 
 ## 3. Repo layout
 
@@ -68,6 +70,7 @@ keel/                             ← lives at keel/ inside the mrsaito/studygro
 │   ├── examples/sample-plan.{md,json}
 │   └── verify.sh
 ├── supabase/                     ← migrations/, verify.sql, metrics.sql, functions/{nudge,delete-account}, test/schema.test.mjs (pglite)
+├── cohort/                       ← INVITE.md, INSTALL.md (+ img/), METRICS.md — Phase B exit kit
 └── web/                          ← @keel/web (Preact + Vite PWA)
     ├── src/app.tsx               state container, screen switch, derived state
     ├── src/store.ts              IndexedDB: kv + append-only completions

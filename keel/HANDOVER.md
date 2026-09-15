@@ -1,3 +1,36 @@
+# HANDOVER.md — Keel, session 9 (2026-09-15) — cohort kit: invite copy, install guide, week-8 metrics
+
+## Session 9 — 2026-09-15 — Phase B exit deliverable: closed-cohort kit (no app change)
+Built:
+- `cohort/INVITE.md` — WhatsApp (English + Urdu draft) and email invite copy. Honest scope: closed test, 8 weeks, free, two numbers measured, delete-anytime. Notes for Saito on what to set before sending.
+- `cohort/INSTALL.md` — one-page install + first-week guide (Android Chrome / iPhone Safari Home-screen install, setup, daily loop, sign-in, reminders, troubleshooting) with 10 real screenshots in `cohort/img/` (2× PNG) and `cohort/img/web/` (1×, 12–43 KB each, for the shareable page).
+- **Shareable page:** https://claude.ai/artifact/1vtcS5GpPzPJfK6TCgN212 — the same guide as one phone-friendly HTML page (Keel's own tokens, system fonts per §4, screenshots embedded, 330 KB). **Private until Saito shares it from the page's share menu.** The invite copy already carries this link.
+- `cohort/METRICS.md` — the exact SQL for the weekly check and the **week-8 verdict** (≥50% of the cohort with ≥3 `unit_done` per week over weeks 2–8, and `metrics_lapse_recovery.recovery_pct` ≥ 50), plus sanity queries (events arriving, push on, cron sending). Replace the cohort-start date in the query.
+- Screenshots were taken from the 0.3.0 build via the fake backend so the signed-in Reminders section could be captured without a mailbox.
+
+Verified: no code changed; gates untouched (last run session 8: ALL GATES PASSED). Guide page viewed once after publish.
+
+Deployed: n/a (production stays 0.3.0).
+
+Deferred / partial:
+- The guide's Android/iPhone "Add to Home screen" steps are text only — OS dialogs cannot be screenshotted headlessly. Saito could add two phone screenshots to `cohort/img/` if the cohort stumbles there.
+- Urdu invite is a machine draft (A6 applies).
+- Anonymous learners are invisible to the metrics views (events are pushed by sync, which needs sign-in). The invite therefore asks everyone to sign in; if many refuse, add an anonymous events path (local counter → aggregate) before week 8.
+
+Decisions made (with reason):
+- **Guide as a private artifact + Markdown in the repo**, not a page on the Vercel site: keeps the app bundle and CSP untouched, and Saito controls who gets the link.
+- **Week 1 excluded from the ≥3-units test** (onboarding noise: people join mid-week). Documented in METRICS.md; change the `w >= 1` filter if Saito disagrees.
+- **Same tokens, system fonts, single light theme** for the guide — it should look like the app it installs, and the data-cost rule applies to a page opened on Pakistani phones over WhatsApp.
+
+Exact next command:
+```
+# Saito: (1) Supabase Site URL (HANDOVER s8), (2) share the guide link, (3) send the invite, (4) record the cohort start date here.
+# Then nothing to build until the first feedback or the week-8 numbers. Weekly: run the "Weekly check" block in cohort/METRICS.md.
+cd keel/web && ./verify.sh
+```
+
+---
+
 # HANDOVER.md — Keel, session 8 (2026-09-14) — Phase B LIVE: Supabase project, schema, functions, sync — 0.3.0
 
 ## Session 8 — 2026-09-14 — B1 unblocked (invoices settled), B1–B7 live on the real project
